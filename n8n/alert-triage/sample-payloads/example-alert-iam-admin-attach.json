@@ -1,0 +1,43 @@
+{
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "detection_rule_id": "b91e2f04-5d3a-4a77-9e1c-2f4f0c7a9b6d",
+  "tenant_id": "116f7376-5997-48db-a656-b882d42f853e",
+  "severity_id": 4,
+  "severity": "High",
+  "name": "AWS IAM - AdministratorAccess policy attached outside business hours",
+  "description": "A user attached AWS managed AdministratorAccess policy to an IAM principal outside 08:00 to 18:00 UTC. Possible privilege escalation by an attacker.",
+  "query_text": "@index={ e78135d3-934c-4c40-99b4-7cec54e90f69 | \"global-cloudtrail\" } eventName:\"AttachUserPolicy\" requestParameters.policyArn:\"arn:aws:iam::aws:policy/AdministratorAccess\" | where eventTime.hour < 8 or eventTime.hour >= 18 | count by userIdentity.arn, sourceIPAddress, requestParameters.userName, requestParameters.policyArn",
+  "tags": [
+    "tactics.ta0004.privilege_escalation",
+    "tactics.ta0003.persistence",
+    "techniques.t1098.003_additional_cloud_roles",
+    "cloud.aws",
+    "aws.iam"
+  ],
+  "detected_in_time_range": {
+    "start": "2026-04-20T03:42:00.000000000Z",
+    "end": "2026-04-20T03:47:12.000000000Z"
+  },
+  "timestamp": 1776666432000000000,
+  "staging": false,
+  "results_table": {
+    "columns": [
+      "userIdentity.arn",
+      "sourceIPAddress",
+      "requestParameters.userName",
+      "requestParameters.policyArn",
+      "@q.count"
+    ],
+    "rows": [
+      {
+        "userIdentity.arn": "arn:aws:iam::123456789012:user/jsmith",
+        "sourceIPAddress": "203.0.113.42",
+        "requestParameters.userName": "contractor-alice",
+        "requestParameters.policyArn": "arn:aws:iam::aws:policy/AdministratorAccess",
+        "@q.count": 1
+      }
+    ],
+    "total_row_count": 1
+  },
+  "View in Scanner": "https://app.scanner.dev/redirect/detections_query/116f7376-5997-48db-a656-b882d42f853e?detection_rule_id=b91e2f04-5d3a-4a77-9e1c-2f4f0c7a9b6d&triggered_at=2026-04-20T03%3A47%3A12.000000000%2B00%3A00"
+}

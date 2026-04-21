@@ -1,0 +1,28 @@
+{
+  "id": "f520b9b7-c005-4f4a-821f-ffedcbf22438",
+  "detection_rule_id": "f28eaed5-7e91-4883-b633-3279b052206a",
+  "tenant_id": "116f7376-5997-48db-a656-b882d42f853e",
+  "severity_id": 5,
+  "severity": "Critical",
+  "name": "AWS CloudTrail - Account closure",
+  "description": "Detects AWS account closure",
+  "query_text": "@index={ e78135d3-934c-4c40-99b4-7cec54e90f69 | \"global-cloudtrail\" } eventName: \"CloseAccount\" | count | where @q.count > 0",
+  "tags": [
+    "tactics.ta0040.impact",
+    "techniques.t1578.modify_cloud_compute_infrastructure"
+  ],
+  "detected_in_time_range": {
+    "start": "2026-04-20T21:51:13.702228890Z",
+    "end": "2026-04-20T21:51:13.702228890Z"
+  },
+  "timestamp": 1776721873702228890,
+  "staging": false,
+  "results_table": {
+    "columns": ["@q.count"],
+    "rows": [
+      { "@q.count": 1 }
+    ],
+    "total_row_count": 1
+  },
+  "View in Scanner": "https://app.scanner.dev/redirect/detections_query/116f7376-5997-48db-a656-b882d42f853e?detection_rule_id=f28eaed5-7e91-4883-b633-3279b052206a&triggered_at=2026-04-20T21%3A51%3A13.702228890%2B00%3A00"
+}

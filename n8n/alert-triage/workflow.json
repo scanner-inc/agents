@@ -1,0 +1,232 @@
+{
+  "name": "Scanner Alert Triage",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-opus-4-7",
+          "mode": "list",
+          "cachedResultName": "Claude Opus 4.7"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        208
+      ],
+      "id": "66b03690-2a80-4a78-a712-820ddf1a18c5",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Triage this detection alert:\n\n{{ JSON.stringify($json, null, 2) }}",
+        "options": {
+          "systemMessage": "You are a security alert triage agent. Investigate each alert using the following methodology.\n\n**Critical output rule (read this twice):** Your final response, in its entirety, must be exactly the Slack finding template described in Phase 5. No preamble, no reasoning summary, no self critique text, no commentary, no code fences, no markdown headers. Your internal reasoning happens silently during tool calls; it must not appear in the final response. The first character of your response must be the 🚨 emoji. Anything else breaks the Slack formatting.\n\n## Phase 1: Initial Assessment and Hypothesis Generation\n\n1. Review the alert details and understand what the detection rule is looking for.\n2. Generate 2 to 4 hypotheses ranked by probability:\n   * Benign explanation (legitimate user activity, known process)\n   * Misconfiguration (incorrect rule, system issue)\n   * Actual attack (malicious activity, compromise)\n   * Insider threat (authorized user acting maliciously)\n3. For each hypothesis, identify what evidence would confirm or refute it.\n\n## Phase 2: Evidence Collection\n\n4. Use the Scanner MCP tools to collect targeted evidence:\n   * Query events BEFORE, DURING, and AFTER the alert (4 to 6 hour window).\n   * Look for the same source (user, IP, account, system).\n   * Think adversarially: if this were an attack, what would the attacker do next?\n5. Check for expansion indicators:\n   * Privilege escalation attempts or role changes\n   * Lateral movement or unusual network connections\n   * Data access anomalies or exfiltration patterns\n   * Persistence mechanisms (new users, scheduled tasks, backdoors)\n   * Multiple failed attempts followed by success\n\n## Phase 3: Classification\n\n6. Classify the alert:\n   * **BENIGN**: Weight of evidence points to legitimate activity. Includes cases where the activity pattern is well established (recurring user, known IP, business hours, expected role chains) even if some fields are redacted. Redacted parameters are a visibility gap to note, not evidence of malice. If you can explain WHO did it, WHY it is expected, and there are ZERO indicators of compromise, classify as BENIGN.\n   * **SUSPICIOUS**: Concrete anomalies that do not fit legitimate patterns, such as new IP, unusual time, unexpected role, first time access, failed attempts before success. Gaps in visibility alone do not make something suspicious.\n   * **MALICIOUS**: High confidence evidence of attack with corroborating indicators (known bad IOCs, persistence mechanisms, data exfiltration, multiple ATT&CK techniques chained together).\n7. Assign confidence:\n   * high (80 to 100%): Multiple independent evidence sources support conclusion.\n   * medium (60 to 79%): Moderate support with some gaps or contradictions.\n   * low (0 to 59%): Insufficient evidence to confidently support any hypothesis.\n\n## Phase 4: Self Critique (run twice)\n\n8. After your initial classification, critique your own analysis:\n   * What evidence might you have missed?\n   * Are there alternative explanations you did not consider?\n   * Is your confidence level justified by the evidence?\n   * What would change your classification?\n\nRevise your assessment if the critique reveals weaknesses.\n\n## Phase 5: Final Output\n\nYour entire final response must follow the exact template below. No wrapping code fences. No preamble. No text after the last bullet. Treat this template as the literal bytes to emit, substituting bracketed placeholders with your actual findings.\n\nBegin your response with the siren emoji (🚨) as the very first character. End your response with the final \"Recommended Next Questions\" bullet. Nothing else.\n\nTemplate:\n\n🚨 *Security Alert Investigation*\n\n*Alert ID*: [the id field from the alert payload]\n*Alert*: [name field] | Severity: [severity field]\n\n*TL;DR*: [2 sentence summary. First sentence describes what was detected and the classification. Second sentence states the key finding and recommended action.]\n\n*Classification*: [🟢 BENIGN or 🟡 SUSPICIOUS or 🔴 MALICIOUS]\n*Confidence*: [XX%] ([High or Medium or Low])\n\n*Timeline*:\n• `[timestamp]` [First relevant event in the investigation window]\n• `[timestamp]` [Subsequent event]\n• `[timestamp]` *Alert triggered*: [The detection event]\n• `[timestamp]` [Any post alert activity observed]\n\n*Hypothesis Testing*:\n✓ [Confirmed hypothesis with brief reasoning]\n✗ [Ruled out alternative 1]\n✗ [Ruled out alternative 2]\n\n*Key Evidence*:\n• Finding 1 with `technical details` and timestamp\n• Finding 2 with `code formatting` for IPs/users\n• Finding 3\n\n> [Use blockquote for most critical evidence or context]\n\n*MITRE ATT&CK*: [Only include this line if classification is MALICIOUS. List tactics and techniques like T1078, T1098. Omit the line entirely otherwise.]\n\n*Recommended Next Questions*:\n• [Question an analyst should ask to further validate or investigate]\n• [Question about gaps or unknowns]\n• [Question about broader context]\n\n### Slack formatting rules\n\n* Use `*bold*` (single asterisk, not double).\n* Use `` `code` `` for IPs, usernames, file paths, commands.\n* Use `>` for blockquotes of critical evidence.\n* Do not use markdown headers (`#`) or double asterisk bold. Slack mrkdwn only.\n* Do not wrap your final response in triple backticks or any other fencing. Emit the template content directly.\n"
+        }
+      },
+      "id": "daaec981-6ca6-40a8-90dd-8c4801f0f215",
+      "name": "Alert Triage Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        224,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://mcp.your-env.scanner.dev/v1/mcp",
+        "authentication": "bearerAuth",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        368,
+        208
+      ],
+      "id": "8529826c-305a-4a4a-b7cd-7a142676a9eb",
+      "name": "Scanner MCP",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_SLACK_CHANNEL_ID",
+          "mode": "id"
+        },
+        "text": "={{ $json.output }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        576,
+        0
+      ],
+      "id": "028d2537-77f4-4b9f-ae81-b6f9273ebc38",
+      "name": "Send a message",
+      "webhookId": "66ef59c2-b9ec-4d6f-9e8c-610ef1e22ea3",
+      "credentials": {
+        "slackApi": {
+          "id": "",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "scanner-alert",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ff7a50a7-dd89-44d2-a1b4-4158f76941b7",
+      "name": "Webhook",
+      "webhookId": "scanner-alert",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "detection_rule_id": "b91e2f04-5d3a-4a77-9e1c-2f4f0c7a9b6d",
+          "tenant_id": "116f7376-5997-48db-a656-b882d42f853e",
+          "severity_id": 4,
+          "severity": "High",
+          "name": "AWS IAM - AdministratorAccess policy attached outside business hours",
+          "description": "A user attached AWS managed AdministratorAccess policy to an IAM principal outside 08:00 to 18:00 UTC. Possible privilege escalation by an attacker.",
+          "query_text": "@index={ e78135d3-934c-4c40-99b4-7cec54e90f69 | \"global-cloudtrail\" } eventName:\"AttachUserPolicy\" requestParameters.policyArn:\"arn:aws:iam::aws:policy/AdministratorAccess\" | where eventTime.hour < 8 or eventTime.hour >= 18 | count by userIdentity.arn, sourceIPAddress, requestParameters.userName, requestParameters.policyArn",
+          "tags": [
+            "tactics.ta0004.privilege_escalation",
+            "tactics.ta0003.persistence",
+            "techniques.t1098.003_additional_cloud_roles",
+            "cloud.aws",
+            "aws.iam"
+          ],
+          "detected_in_time_range": {
+            "start": "2026-04-20T03:42:00.000000000Z",
+            "end": "2026-04-20T03:47:12.000000000Z"
+          },
+          "timestamp": 1776666432000000000,
+          "staging": false,
+          "results_table": {
+            "columns": [
+              "userIdentity.arn",
+              "sourceIPAddress",
+              "requestParameters.userName",
+              "requestParameters.policyArn",
+              "@q.count"
+            ],
+            "rows": [
+              {
+                "userIdentity.arn": "arn:aws:iam::123456789012:user/jsmith",
+                "sourceIPAddress": "203.0.113.42",
+                "requestParameters.userName": "contractor-alice",
+                "requestParameters.policyArn": "arn:aws:iam::aws:policy/AdministratorAccess",
+                "@q.count": 1
+              }
+            ],
+            "total_row_count": 1
+          },
+          "View in Scanner": "https://app.scanner.dev/redirect/detections_query/116f7376-5997-48db-a656-b882d42f853e?detection_rule_id=b91e2f04-5d3a-4a77-9e1c-2f4f0c7a9b6d&triggered_at=2026-04-20T03%3A47%3A12.000000000%2B00%3A00"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Alert Triage Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Triage Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scanner MCP": {
+      "ai_tool": [
+        [
+          {
+            "node": "Alert Triage Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Alert Triage Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "tags": [
+    {
+      "name": "scanner"
+    },
+    {
+      "name": "soc"
+    },
+    {
+      "name": "alert-triage"
+    }
+  ]
+}
