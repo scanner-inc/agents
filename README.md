@@ -1,6 +1,6 @@
 # Scanner agents
 
-Working examples of autonomous security agents that use [Scanner](https://scanner.dev) as their log source, covering multiple deployment approaches so you can pick the one that fits your team.
+Autonomous SOC agents for [Scanner](https://scanner.dev), ready to deploy. Each folder is a working implementation: import it, configure credentials for your environment, and it runs. Not demos, not stubs.
 
 ## What's here
 

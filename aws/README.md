@@ -1,6 +1,6 @@
 # AWS agents
 
-Two autonomous SOC agents deployed on AWS, built with the [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk):
+Two autonomous SOC agents for AWS, ready to deploy. Built with the [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk). The included Terraform stands up the full runtime (Lambda or ECS Fargate, API Gateway, SQS, VPC, EventBridge, IAM, Secrets Manager, CloudWatch) in one `./deploy.sh`.
 
 1. **Alert Triage Agent** (`alert-triage/`): receives detection alerts via a webhook (API Gateway with API key auth) that enqueues to SQS, which triggers a Lambda. The Lambda queries logs through Scanner MCP, classifies severity, posts a structured finding to Slack, and logs every tool call as structured JSON to CloudWatch for audit.
 

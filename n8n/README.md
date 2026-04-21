@@ -1,6 +1,6 @@
 # n8n workflows
 
-n8n workflow examples that pair Claude with [Scanner](https://scanner.dev) MCP to automate common SOC tasks. Each subfolder is a self-contained workflow you can import directly into your n8n instance.
+Deployable n8n workflows that pair Claude with [Scanner](https://scanner.dev) MCP to automate common SOC tasks. Each subfolder ships a full workflow: import it, configure your credentials, activate.
 
 ## Workflows
 
@@ -23,7 +23,7 @@ n8n workflow examples that pair Claude with [Scanner](https://scanner.dev) MCP t
 
 ## Getting started
 
-1. Pick a workflow folder. Start with `alert-triage/` if you want the simplest end-to-end example.
+1. Pick a workflow folder. Start with `alert-triage/` if you want the simplest end-to-end path.
 2. Follow its `setup.md`: create credentials in n8n, import `workflow.json`, adjust the MCP URL and Slack channel, test with the pinned sample payload.
 3. Once the workflow runs end-to-end against the sample, wire up the real trigger (Scanner event sink for webhooks, or activate the Schedule trigger).
 
