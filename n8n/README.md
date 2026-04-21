@@ -7,8 +7,7 @@ n8n workflow examples that pair Claude with [Scanner](https://scanner.dev) MCP t
 | Workflow | Trigger | What it does |
 |---|---|---|
 | **[`alert-triage/`](./alert-triage)** | Webhook (Scanner event sink) | Investigates a detection alert via Scanner MCP, classifies as BENIGN / SUSPICIOUS / MALICIOUS with evidence, and posts a structured finding to Slack. |
-| `daily-reporting/` (planned) | Schedule (daily) | Reports on log source volume, detection rule coverage, MITRE coverage, and alert counts. Recommends next log sources and detections to close gaps. |
-| `threat-hunting/` (planned) | Schedule (hourly) | Pulls fresh IOCs from CISA KEV, ThreatFox, OTX, and Feodo Tracker; hunts across historical logs via Scanner MCP; posts findings to Slack. |
+| **[`daily-reporting/`](./daily-reporting)** | Schedule (daily) | Reports on log source volume, detection rule coverage, MITRE coverage, and alert counts. Recommends next log sources and detections to close gaps. |
 
 ## Structure of each workflow folder
 
