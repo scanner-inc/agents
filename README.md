@@ -1,10 +1,10 @@
 # Scanner agents
 
-Autonomous SOC agents for [Scanner](https://scanner.dev), ready to deploy. Each folder is a working implementation: import it, configure credentials for your environment, and it runs.
+SOC agents built against [Scanner](https://scanner.dev)'s MCP and detection rules API. Two runtimes: n8n workflows (import into any n8n instance) and Claude Agent SDK programs (deploy to AWS with the included Terraform).
 
 ## What's here
 
-Each top-level folder is a different deployment approach. The workflows inside each folder are the same recurring set of SOC agent use cases: alert triage, threat hunting, detection engineering, and reporting.
+Each top-level folder is a different kind of artifact. Today the repo is focused on deployable agents.
 
 - **[`n8n/`](./n8n)**: n8n workflows (visual workflow automation). Importable `workflow.json` files plus READMEs. Good for teams that already use n8n or want non-developers to read and modify agents.
 - **[`aws/`](./aws)**: Claude Agent SDK agents deployed on AWS (Lambda + ECS Fargate) with Terraform. Good for teams that want the agent runtime inside their own VPC, with full control and standard engineering tooling.
@@ -18,7 +18,7 @@ Each top-level folder is a different deployment approach. The workflows inside e
 | You want the fastest path from Claude Code interactive use to autonomous | `n8n/` (n8n Cloud trial) |
 | Compliance or networking requires the agent to run inside your VPC | `aws/` |
 
-The three approaches are not mutually exclusive. A mature SOC often runs a mix: interactive Claude Code + Scanner MCP for detection engineering, an n8n workflow for alert triage, and an AWS-hosted agent for in-VPC response actions.
+These approaches are not mutually exclusive. A mature SOC often runs a mix: interactive Claude Code + Scanner MCP for detection engineering, an n8n workflow for alert triage, and an AWS-hosted agent for in-VPC response actions.
 
 ## Related
 
