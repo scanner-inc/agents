@@ -48,6 +48,6 @@ Cross referencing these gives: which log sources have coverage, which MITRE tact
 2. **MCP and API base URLs**: replace `your-env.scanner.dev` with your tenant hostname in two places (MCP Client and Detection Rules HTTP Request Tool).
 3. **Schedule**: adjust the cron expression for your team's timezone.
 4. **Slack channel**: set the reporting channel ID.
-5. **Pagination cap**: the HTTP Request Tool description caps max pages; tune if you have more than ~500 rules.
+5. **Pagination cap**: the prompt caps the agent at 5 pages (5,000 rules at page size 1000); tune if you have more than ~5,000 rules.
 
 See `setup.md` for step by step.

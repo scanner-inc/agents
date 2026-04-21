@@ -45,7 +45,7 @@ Create these credentials in n8n's **Credentials** UI. Names must match the refer
 
 ## Tuning knobs
 
-* Drop the pagination cap below 10 pages (described in the prompt) if you have fewer rules.
+* Drop the pagination cap below 5 pages (described in the prompt) if you have fewer rules.
 * Switch from daily to weekly cadence.
 * Swap the model to `claude-sonnet-4-7` if you want a faster, lighter run; you give up some judgment quality on the recommendations.
 
