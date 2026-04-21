@@ -1,6 +1,6 @@
 # Scanner agents
 
-Autonomous SOC agents for [Scanner](https://scanner.dev), ready to deploy. Each folder is a working implementation: import it, configure credentials for your environment, and it runs. Not demos, not stubs.
+Autonomous SOC agents for [Scanner](https://scanner.dev), ready to deploy. Each folder is a working implementation: import it, configure credentials for your environment, and it runs.
 
 ## What's here
 
@@ -22,7 +22,6 @@ The three approaches are not mutually exclusive. A mature SOC often runs a mix: 
 
 ## Related
 
-- **[scanner-inc/first-soc-agents](https://github.com/scanner-inc/first-soc-agents)**: the blog companion repo for "Building Your First SOC Agents". The `aws/` folder here is a sibling variant; both will be maintained.
 - **[Scanner MCP docs](https://scanner.dev/docs)**: documentation for using Claude with Scanner via MCP (interactive investigations, detection engineering, autonomous workflows).
 
 ## License
