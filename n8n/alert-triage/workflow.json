@@ -75,7 +75,7 @@
           "value": "REPLACE_WITH_SLACK_CHANNEL_ID",
           "mode": "id"
         },
-        "text": "={{ $json.output }}",
+        "text": "={{ $json.output.indexOf('🚨') >= 0 ? $json.output.slice($json.output.indexOf('🚨')) : $json.output }}",
         "otherOptions": {}
       },
       "type": "n8n-nodes-base.slack",
