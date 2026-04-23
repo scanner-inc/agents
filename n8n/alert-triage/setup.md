@@ -14,7 +14,7 @@ Before importing `workflow.json`, create these credentials in n8n's **Credential
 1. **Anthropic account** (type: Anthropic API)
    * API Key: your Anthropic key.
 
-2. **Bearer Auth account** (type: HTTP Bearer Auth)
+2. **Scanner API/MCP Bearer Auth account** (type: HTTP Bearer Auth)
    * Bearer Token: your Scanner MCP API key. Paste just the token; n8n adds the `Bearer ` prefix.
 
 3. **Slack account** (type: Slack API or Slack OAuth2)
@@ -32,7 +32,7 @@ Before importing `workflow.json`, create these credentials in n8n's **Credential
    * **Webhook**: path is `scanner-alert`. Authentication shows "Header Auth" and references the "Header Auth account" credential. Copy the Production URL for the Scanner event sink config.
    * **Alert Triage Agent**: Retry On Fail enabled (3 tries, 5s wait).
    * **Anthropic Chat Model**: credential set to "Anthropic account". Model is `claude-opus-4-7` (swap to `claude-sonnet-4-7` if you hit overload errors).
-   * **Scanner MCP**: endpoint URL is your tenant's MCP URL (replace `mcp.your-env.scanner.dev` with the real hostname). Credential is "Bearer Auth account".
+   * **Scanner MCP**: endpoint URL is your tenant's MCP URL (replace `mcp.your-env.scanner.dev` with the real hostname). Credential is "Scanner API/MCP Bearer Auth account".
    * **Alert Triage Agent**: system message field contains the full body of `prompts/triage-agent.md`. Import copies it, but verify it is not truncated.
    * **Send a message**: channel ID is set to your target Slack channel (replace the placeholder).
 

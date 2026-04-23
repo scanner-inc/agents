@@ -63,7 +63,7 @@
       "credentials": {
         "httpBearerAuth": {
           "id": "",
-          "name": "Bearer Auth account"
+          "name": "Scanner API/MCP Bearer Auth account"
         }
       }
     },

@@ -15,7 +15,7 @@ Create these credentials in n8n's **Credentials** UI. Names must match the refer
 1. **Anthropic account** (type: Anthropic API)
    * API Key: your Anthropic key.
 
-2. **Bearer Auth account** (type: HTTP Bearer Auth)
+2. **Scanner API/MCP Bearer Auth account** (type: HTTP Bearer Auth)
    * Bearer Token: your Scanner API key. n8n prepends `Bearer ` automatically. The same credential works for both the Scanner MCP and the Scanner REST API.
 
 3. **Slack account** (type: Slack API or Slack OAuth2)
@@ -27,8 +27,8 @@ Create these credentials in n8n's **Credentials** UI. Names must match the refer
 2. Open each node and verify:
    * **Schedule Trigger**: cron is `0 8 * * *` (08:00 UTC daily). Adjust to your timezone.
    * **Anthropic Chat Model**: credential set to "Anthropic account". Model is `claude-opus-4-7`.
-   * **Scanner MCP**: endpoint URL is your tenant's MCP URL (replace `mcp.your-env.scanner.dev` with the real hostname). Credential is "Bearer Auth account".
-   * **Detection Rules API**: URL is `https://api.your-env.scanner.dev/v1/detection_rule` (replace `your-env` with your tenant hostname). Credential is "Bearer Auth account". In Query Parameters, replace `REPLACE_WITH_TENANT_UUID` on the `tenant_id` parameter with your actual tenant UUID.
+   * **Scanner MCP**: endpoint URL is your tenant's MCP URL (replace `mcp.your-env.scanner.dev` with the real hostname). Credential is "Scanner API/MCP Bearer Auth account".
+   * **Detection Rules API**: URL is `https://api.your-env.scanner.dev/v1/detection_rule` (replace `your-env` with your tenant hostname). Credential is "Scanner API/MCP Bearer Auth account". In Query Parameters, replace `REPLACE_WITH_TENANT_UUID` on the `tenant_id` parameter with your actual tenant UUID.
    * **Daily Report Agent**: system message field contains the full body of `prompts/reporting-agent.md`. Paste it if the import did not populate it.
    * **Send a message**: channel ID is your reporting Slack channel.
 
