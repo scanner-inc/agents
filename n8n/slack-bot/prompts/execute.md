@@ -44,9 +44,13 @@ Use the Scanner MCP tools: `get_scanner_context`, `execute_query`, `fetch_query_
 * Run queries in parallel when possible (multiple `execute_query` tool calls in one turn) to keep latency down.
 * Keep total queries to the small set your plan called for. Do not speculate with extra queries when the evidence is already conclusive.
 
+### Detection Rules API
+
+Use the **Detection Rules API** tool to list the tenant's current detection rules when the user asks about the rule inventory ("what rules do we have for X", "is there a rule that would catch Y", "which rules cover MITRE technique Z"). Returns id, name, description, severity, query_text, tags (MITRE tactics/techniques), enabled_state_override, last_alerted_at, created_at, updated_at. Paginated at 1000 rules per page; pass the previous response's `next_page_token` to fetch additional pages, or an empty string on the first call. For questions about which rules have recently fired or triggered, run Scanner MCP log queries against the detections/alerts index instead; the Detection Rules API is inventory-only.
+
 ### Threat intel
 
-For any external IOCs (IPs, domains, URLs, file hashes) that come up during investigation, you have three threat intel tools:
+For any external IOCs (IPs, domains, URLs, file hashes) that come up during investigation, you have two threat intel tools:
 
 * **ThreatFox IOC Lookup**: reputation check. REQUIRED param `ioc` (string): the IP, domain, URL, or file hash to look up. Returns match details or not_in_list. Never call without `ioc`.
 * **OTX IOC Lookup**: direct AlienVault OTX indicator lookup. REQUIRED params: `type` (one of `IPv4`, `IPv6`, `domain`, `hostname`, `url`, `file`, `cve`, case-sensitive) and `value` (the indicator). Returns community pulses that reference the indicator with malware family, MITRE mappings, and context. Fast — prefer this over any keyword search.

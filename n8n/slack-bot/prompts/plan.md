@@ -47,5 +47,6 @@ The Execute step has the full Scanner MCP tool set (including `execute_query` an
 Your plan MUST only reference tools that Execute can actually call. The full list:
 
 * **Scanner MCP** (full set): `execute_query`, `fetch_query_results`, `get_scanner_context`, `get_top_columns`, `get_docs`. Used for all log queries, schema lookups, and Scanner docs.
+* **Detection Rules API**: lists the tenant's detection rules (id, name, description, severity, query_text, MITRE tags, enabled state, last_alerted_at). Use this in plans for questions about the rule inventory ("what rules do we have for X", "is there a rule covering MITRE technique Y"). For "which rules fired recently", plan Scanner MCP log queries against the detections/alerts index instead.
 * **ThreatFox IOC Lookup**: reputation check against abuse.ch ThreatFox. REQUIRED param `ioc` (string): IP, domain, URL, or file hash. Returns match details or not_in_list.
 * **OTX IOC Lookup**: direct AlienVault OTX indicator lookup. REQUIRED params: `type` (one of `IPv4`, `IPv6`, `domain`, `hostname`, `url`, `file`, `cve`) and `value` (the indicator). Returns community pulses referencing the indicator with malware family, MITRE mappings, and context.
