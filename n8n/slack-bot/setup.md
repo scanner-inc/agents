@@ -26,8 +26,11 @@ oauth_config:
       - app_mentions:read    # receive @-mentions
       - channels:history     # read public channel history for context
       - groups:history       # read private channel history (only for channels the bot is in)
+      - im:history           # read DM history (if you @-mention the bot in a DM)
+      - mpim:history         # read group DM history
       - chat:write           # post replies
-      - reactions:write      # (optional) add :eyes: ack reactions
+      - reactions:write      # add :eyes: ack reactions
+      - users:read           # resolve user IDs to display names in thread context
 settings:
   event_subscriptions:
     request_url: https://<your-n8n-host>/webhook/slack-bot-app-mention
@@ -67,6 +70,7 @@ Before importing `workflow.json`, create these credentials in n8n's **Credential
 3. Open each node and verify:
    * **Slack Trigger**: events list shows `app_mention`. Credential is "Slack account". Copy the **Production URL** from this node, you'll paste it into the Slack app's Event Subscriptions "Request URL" field.
    * **Get Thread Replies** and **Get Channel History**: credential type is "Predefined Credential Type" → "Slack API" → "Slack account".
+   * **Resolve User Names**: Code node that extracts user IDs from the context, calls `users.info` per ID in parallel via the Slack credential, and rewrites the context with display names. Uses the "Slack account" credential internally via `this.helpers.httpRequestWithAuthentication`. No configuration needed on the node itself.
    * **Anthropic Chat Model**: credential is "Anthropic account", model is Claude Opus 4.7. Verify the model name resolves in the dropdown; older n8n builds may not list 4.x models, upgrade your n8n image if it's missing.
    * **Scanner MCP (Schema)** and **Scanner MCP**: both endpoint URLs are your tenant's MCP URL (replace `mcp.your-env.scanner.dev` with the real hostname in *both* nodes). Credential is "Scanner API/MCP Bearer Auth account" on both. On the **Scanner MCP (Schema)** node, verify the tool filter shows only `get_scanner_context`, `get_top_columns`, `get_docs`, the field may be labeled "Tools to Include" or "Included Tools" in the n8n UI. If the filter dropdown looks empty after import, reselect those three tools manually.
    * **Summarize / Plan / Execute agents**: system message field is populated (paste from `prompts/summarize.md`, `prompts/plan.md`, `prompts/execute.md` if anything looks truncated). Execute agent has Retry On Fail enabled (3 tries, 5s wait).

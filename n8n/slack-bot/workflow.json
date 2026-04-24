@@ -223,6 +223,16 @@
     },
     {
       "parameters": {
+        "jsCode": "const buildCtx = $input.first().json;\nconst context = buildCtx.context || '';\n\n// Extract unique Slack user IDs referenced in the context (matches <UXXXX> / <WXXXX>).\nconst ids = new Set();\nfor (const m of context.matchAll(/<([UW][A-Z0-9]+)>/g)) {\n  ids.add(m[1]);\n}\n\n// No user mentions in context, pass straight through.\nif (ids.size === 0) {\n  return [{ json: buildCtx }];\n}\n\n// Fetch each user in parallel via users.info. Continue on individual failure so one bad ID doesn't drop the whole run.\nconst lookups = await Promise.all(\n  Array.from(ids).map(async id => {\n    try {\n      const resp = await this.helpers.httpRequestWithAuthentication.call(\n        this,\n        'slackApi',\n        { method: 'GET', url: 'https://slack.com/api/users.info', qs: { user: id }, json: true }\n      );\n      return { id, ok: resp && resp.ok, user: resp && resp.user };\n    } catch (err) {\n      return { id, ok: false, error: String(err) };\n    }\n  })\n);\n\n// Build userId -> display name map (prefer display_name, fall back to real_name, then username, then ID).\nconst userMap = {};\nfor (const r of lookups) {\n  if (!r.ok || !r.user) continue;\n  const p = r.user.profile || {};\n  userMap[r.id] = p.display_name || p.real_name || r.user.real_name || r.user.name || r.id;\n}\n\n// Rewrite context: replace <USERID> occurrences with @DisplayName. Leave unresolved IDs in raw form.\nconst newContext = context.replace(/<([UW][A-Z0-9]+)>/g, (match, id) => userMap[id] ? `@${userMap[id]}` : match);\n\nreturn [{ json: { ...buildCtx, context: newContext } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [544, 944],
+      "id": "sb01-usr2-0000-0000-000000000002",
+      "name": "Resolve User Names"
+    },
+    {
+      "parameters": {
         "promptType": "define",
         "text": "=Thread or channel context (oldest to newest):\n\n{{ $json.context }}\n\nThe user just @-mentioned the bot with:\n\n{{ $json.question }}",
         "options": {
@@ -250,9 +260,9 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {"name": "channel", "value": "={{ $('Build Context').item.json.channel }}"},
+            {"name": "channel", "value": "={{ $('Resolve User Names').item.json.channel }}"},
             {"name": "text", "value": "=*[1/3]* {{ $json.output.indexOf('💭') >= 0 ? $json.output.slice($json.output.indexOf('💭')) : $json.output }}"},
-            {"name": "thread_ts", "value": "={{ $('Build Context').item.json.thread_parent_ts }}"},
+            {"name": "thread_ts", "value": "={{ $('Resolve User Names').item.json.thread_parent_ts }}"},
             {"name": "mrkdwn", "value": "true"}
           ]
         },
@@ -276,7 +286,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Thread or channel context (oldest to newest):\n\n{{ $('Build Context').item.json.context }}\n\nThe user's question:\n\n{{ $('Build Context').item.json.question }}\n\nSummary from step 1 (what we're investigating):\n\n{{ $('Summarize Request').item.json.output }}\n\nNow produce the plan.",
+        "text": "=Thread or channel context (oldest to newest):\n\n{{ $('Resolve User Names').item.json.context }}\n\nThe user's question:\n\n{{ $('Resolve User Names').item.json.question }}\n\nSummary from step 1 (what we're investigating):\n\n{{ $('Summarize Request').item.json.output }}\n\nNow produce the plan.",
         "options": {
           "systemMessage": "You are the second step of a three-step Slack-based SOC assistant. You have been given the user's question, the thread context, and a one-line summary from the prior step. Your job is to write a short, concrete investigation plan that the Execute step will run against Scanner MCP.\n\n## Tools available to you\n\nYou have READ-ONLY Scanner MCP tools so you can ground the plan in the actual environment. These return metadata only, they do not search log events:\n\n* `get_scanner_context`, lists the log indexes available in this Scanner tenant, their schema, and a context token. Call this first if you don't already know what indexes are present.\n* `get_top_columns`, returns the most common fields in a given index. Use this when your plan depends on specific field names you're not sure exist.\n* `get_docs`, returns documentation for Scanner query syntax, built-in functions, and operators. Use this if you're unsure how to phrase a query pattern.\n\nYou CANNOT run queries. `execute_query` and `fetch_query_results` are only available to the Execute step. Your job is to plan, not investigate. If you feel the urge to search for a specific user or IP, that's a hint that the item belongs in a plan bullet, not a tool call at your step.\n\nKeep schema exploration to 1–3 tool calls. Use them to verify index names and key fields, not to build a comprehensive map of the environment.\n\n## Output rules\n\n* First character of your response: 📋 (literal Unicode clipboard emoji).\n* Second line: `*Plan*:`\n* Then 3 to 6 bullet lines, each starting with `•`.\n* Each bullet must reference a concrete action, a Scanner query (name the index and key fields), a threat intel lookup, a specific log source to inspect. Do not write vague bullets like \"investigate the activity\" or \"check for anomalies\".\n* Slack mrkdwn only: `*bold*` with single asterisks, `` `code` `` for field names, index names, IPs, and other technical values. `•` for bullets, never `- ` or `* `. Do not use `#` headers or `**double asterisk**` bold.\n* No preamble, no sign-off, no \"Let me plan this out\".\n\n## Example\n\n📋 *Plan*:\n• Query `@index=global-cloudtrail` for all `lambda:*` events in the past 6 hours, grouped by `eventName`\n• Filter for operations against function `system-maintenance-handler` specifically\n• Check EventBridge `PutRule` and `PutTargets` calls in the same window to see how the Lambda was wired to a schedule\n• Cross-reference source IP `31.41.59.26` against threat intel\n• Look for `CreateFunction` / `UpdateFunctionConfiguration` loops that suggest redeployment persistence\n\n## What the next step will do\n\nThe Execute step has the full Scanner MCP tool set (including `execute_query` and `fetch_query_results`) and will call `get_scanner_context` on its own. Your plan should name indexes and fields specifically when you know them; where you're unsure, it's fine to phrase a bullet at the intent level (\"search the identity provider logs for failed logins from this user\") and let Execute resolve the exact index."
         }
@@ -302,9 +312,9 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {"name": "channel", "value": "={{ $('Build Context').item.json.channel }}"},
+            {"name": "channel", "value": "={{ $('Resolve User Names').item.json.channel }}"},
             {"name": "text", "value": "=*[2/3]* {{ $json.output.indexOf('📋') >= 0 ? $json.output.slice($json.output.indexOf('📋')) : $json.output }}"},
-            {"name": "thread_ts", "value": "={{ $('Build Context').item.json.thread_parent_ts }}"},
+            {"name": "thread_ts", "value": "={{ $('Resolve User Names').item.json.thread_parent_ts }}"},
             {"name": "mrkdwn", "value": "true"}
           ]
         },
@@ -328,7 +338,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Thread or channel context (oldest to newest):\n\n{{ $('Build Context').item.json.context }}\n\nThe user's question:\n\n{{ $('Build Context').item.json.question }}\n\nYour plan (from step 2):\n\n{{ $('Plan Investigation').item.json.output }}\n\nExecute the plan using the Scanner MCP tools and post the finding.",
+        "text": "=Thread or channel context (oldest to newest):\n\n{{ $('Resolve User Names').item.json.context }}\n\nThe user's question:\n\n{{ $('Resolve User Names').item.json.question }}\n\nYour plan (from step 2):\n\n{{ $('Plan Investigation').item.json.output }}\n\nExecute the plan using the Scanner MCP tools and post the finding.",
         "options": {
           "systemMessage": "You are the third and final step of a Slack-based SOC assistant. You have Scanner MCP wired up as a tool. Your job is to execute the plan from the prior step and post the finding in Slack.\n\n## Critical output rule\n\nYour final response, in its entirety, must be exactly the Slack-formatted finding. No preamble, no \"Let me run the queries\", no reasoning summary, no commentary, no code fences. Your internal reasoning happens silently during tool calls; it must not appear in the final response. The first character of your response must be the literal ✅ (Unicode white check mark) emoji.\n\n## Slack formatting rules\n\nYou are posting to Slack, NOT a markdown renderer. Slack mrkdwn differs from GitHub markdown.\n\n**Use:**\n* `*bold*` with single asterisks (not `**double**`).\n* `` `code` `` for IPs, field names, commands, usernames, hashes, index names, event names.\n* `•` for bullets, `◦` for sub-bullets.\n* `>` at the start of a line for blockquotes of critical evidence.\n* Literal Unicode emoji (✅, 🔍, 🚨), never shortcodes like `:white_check_mark:` or `:mag:`.\n\n**Do not use:**\n* `#` or `##` markdown headers. Use `*Bold Text*` on its own line for section titles.\n* `**double asterisk**` for bold, it renders as literal asterisks.\n* `- ` or `* ` for bullets, use `•`.\n* `---` or `***` as separators, use a blank line.\n* Triple-backtick code fences around the entire response.\n\n## Tool usage\n\nUse the Scanner MCP tools: `get_scanner_context`, `execute_query`, `fetch_query_results`, `get_docs`, `get_top_columns`.\n\n* Always call `get_scanner_context` first if you have not already in this conversation, it returns the available log sources and a context token required by `execute_query`.\n* Scanner query syntax:\n  * Use `@index=<index-name>` to narrow searches.\n  * NEVER use bare `OR` between `field:value` pairs. Group values in parentheses:\n    * CORRECT: `sourceIPAddress: (\"23.27.124.*\" \"23.27.140.*\")`\n    * WRONG: `sourceIPAddress: 23.27.124.* OR sourceIPAddress: 23.27.140.*`\n  * Wildcard field search: `**: \"value\"` searches across all fields.\n* Run queries in parallel when possible (multiple `execute_query` tool calls in one turn) to keep latency down.\n* Keep total queries to the small set your plan called for. Do not speculate with extra queries when the evidence is already conclusive.\n\n## Output template\n\nAdapt the structure to the actual question, not every section belongs in every answer. Start with ✅ and end with the \"Recommended Next Questions\" bullets.\n\n✅ *Finding*\n\n*TL;DR*: [1 to 2 sentence direct answer to the user's question]\n\n*Evidence*:\n• [Specific query or lookup → what it returned, with `code` for technical values]\n• [Specific query or lookup → what it returned]\n• [Specific query or lookup → what it returned]\n\n*Timeline* (include only if a timeline is relevant to the answer):\n• `[timestamp]` [event]\n• `[timestamp]` [event]\n\n> [Blockquote for the single most critical piece of evidence or context]\n\n*What I could not confirm* (include only if there are real visibility gaps):\n• [What you searched, what was not found, why it is inconclusive]\n\n*Recommended Next Questions*:\n• [Follow-up that would close a gap or deepen the investigation]\n• [Follow-up about broader context]\n\nKeep the message compact, a Slack reply, not a blog post. Aim for under 30 lines total. If the question is small, the answer can be much smaller than the template (a TL;DR and two evidence bullets may be enough)."
         }
@@ -354,9 +364,9 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {"name": "channel", "value": "={{ $('Build Context').item.json.channel }}"},
+            {"name": "channel", "value": "={{ $('Resolve User Names').item.json.channel }}"},
             {"name": "text", "value": "=*[3/3]* {{ $json.output.indexOf('✅') >= 0 ? $json.output.slice($json.output.indexOf('✅')) : $json.output }}"},
-            {"name": "thread_ts", "value": "={{ $('Build Context').item.json.thread_parent_ts }}"},
+            {"name": "thread_ts", "value": "={{ $('Resolve User Names').item.json.thread_parent_ts }}"},
             {"name": "mrkdwn", "value": "true"}
           ]
         },
@@ -558,6 +568,17 @@
       ]
     },
     "Build Context": {
+      "main": [
+        [
+          {
+            "node": "Resolve User Names",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve User Names": {
       "main": [
         [
           {

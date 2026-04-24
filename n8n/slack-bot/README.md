@@ -31,6 +31,11 @@ Interactive Scanner SOC assistant you can `@` mention in Slack. The bot reads th
                               ┌──────────────┐
                               │Build Context │  merge + sort by ts
                               └──────┬───────┘
+                                     ▼
+                              ┌──────────────┐
+                              │Resolve User  │  users.info per ID (parallel)
+                              │   Names      │  <UID> → @DisplayName
+                              └──────┬───────┘
                           ▼
                   ┌────────────────┐
                   │ 1. Summarize   │◀── Anthropic Opus 4.7
@@ -79,12 +84,13 @@ All three posts land in the same thread (using `thread_ts`, or the mention's own
 5. **Get Thread Replies** (`n8n-nodes-base.httpRequest`, true branch): GETs `https://slack.com/api/conversations.replies?channel=…&ts=…&limit=50` using the Slack credential.
 6. **Get Channel History** (`n8n-nodes-base.httpRequest`, false branch): GETs `https://slack.com/api/conversations.history?channel=…&limit=30`.
 7. **Build Context** (`n8n-nodes-base.code`): takes the Slack API response, sorts messages by `ts` ascending, joins them as `<user>: text` lines, and carries forward the fields from Parse Event. Emits `{ question, channel, ts, thread_ts, user, context, thread_parent_ts }`.
-8. **Summarize Request** (`@n8n/n8n-nodes-langchain.agent` + Opus 4.7): one-line restatement starting with 💭. System prompt in `prompts/summarize.md`.
-9. **Post Summary** (`n8n-nodes-base.slack`): prepends `*[1/3]* ` and posts threaded under `thread_parent_ts`.
-10. **Plan Investigation** (`@n8n/n8n-nodes-langchain.agent` + Opus 4.7 + Scanner MCP schema tools): 3-6 bullet plan starting with 📋. May call `get_scanner_context` / `get_top_columns` / `get_docs` to ground the plan. System prompt in `prompts/plan.md`.
-11. **Post Plan**: prepends `*[2/3]* ` and posts threaded.
-12. **Execute Plan** (`@n8n/n8n-nodes-langchain.agent` + Opus 4.7 + full Scanner MCP): runs the plan against Scanner, produces the finding starting with ✅. Retry On Fail enabled (3 tries, 5s wait). System prompt in `prompts/execute.md`.
-13. **Post Result**: prepends `*[3/3]* ` and posts threaded.
+8. **Resolve User Names** (`n8n-nodes-base.code`): extracts unique `<UXXXXX>` IDs from the context, calls `users.info` for each in parallel via n8n's authenticated-HTTP helper, builds an ID → display-name map, and rewrites the context with `@DisplayName`. Short-circuits if no user IDs are present. Requires `users:read` scope on the Slack app.
+9. **Summarize Request** (`@n8n/n8n-nodes-langchain.agent` + Opus 4.7): one-line restatement starting with 💭. System prompt in `prompts/summarize.md`.
+10. **Post Summary** (`n8n-nodes-base.slack`): prepends `*[1/3]* ` and posts threaded under `thread_parent_ts`.
+11. **Plan Investigation** (`@n8n/n8n-nodes-langchain.agent` + Opus 4.7 + Scanner MCP schema tools): 3-6 bullet plan starting with 📋. May call `get_scanner_context` / `get_top_columns` / `get_docs` to ground the plan. System prompt in `prompts/plan.md`.
+12. **Post Plan**: prepends `*[2/3]* ` and posts threaded.
+13. **Execute Plan** (`@n8n/n8n-nodes-langchain.agent` + Opus 4.7 + full Scanner MCP): runs the plan against Scanner, produces the finding starting with ✅. Retry On Fail enabled (3 tries, 5s wait). System prompt in `prompts/execute.md`.
+14. **Post Result**: prepends `*[3/3]* ` and posts threaded.
 
 ## Sub-nodes
 
