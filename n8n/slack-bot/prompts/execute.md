@@ -48,9 +48,8 @@ Use the Scanner MCP tools: `get_scanner_context`, `execute_query`, `fetch_query_
 
 For any external IOCs (IPs, domains, URLs, file hashes) that come up during investigation, you have three threat intel tools:
 
-* **ThreatFox IOC Lookup**: reputation check for a specific IOC (call with an IP, domain, URL, or file hash).
-* **OTX Pulse Search**: community pulses for campaigns and context (call with a keyword: IP, domain, CVE ID, malware family, or threat actor name).
-* **Feodo Tracker**: current botnet C2 IP blocklist for Dridex, Emotet, TrickBot, QakBot, etc. (no parameters; returns the full active list).
+* **ThreatFox IOC Lookup**: reputation check. REQUIRED param `ioc` (string): the IP, domain, URL, or file hash to look up. Returns match details or not_in_list. Never call without `ioc`.
+* **OTX IOC Lookup**: direct AlienVault OTX indicator lookup. REQUIRED params: `type` (one of `IPv4`, `IPv6`, `domain`, `hostname`, `url`, `file`, `cve`, case-sensitive) and `value` (the indicator). Returns community pulses that reference the indicator with malware family, MITRE mappings, and context. Fast — prefer this over any keyword search.
 
 Hits against these feeds are strong evidence. Absence of a hit is weak evidence, since many real threats are not in public feeds.
 

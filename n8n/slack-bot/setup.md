@@ -84,8 +84,7 @@ Before importing `workflow.json`, create these credentials in n8n's **Credential
    * **Anthropic Chat Model**: credential is "Anthropic account", model is Claude Opus 4.7. Verify the model name resolves in the dropdown; older n8n builds may not list 4.x models, upgrade your n8n image if it's missing.
    * **Scanner MCP (Schema Tools Only)** and **Scanner MCP**: both endpoint URLs are your tenant's MCP URL (replace `mcp.your-env.scanner.dev` with the real hostname in *both* nodes). Credential is "Scanner API/MCP Bearer Auth account" on both. On the **Scanner MCP (Schema Tools Only)** node, verify the tool filter shows only `get_scanner_context`, `get_top_columns`, `get_docs`, the field may be labeled "Tools to Include" or "Included Tools" in the n8n UI. If the filter dropdown looks empty after import, reselect those three tools manually.
    * **ThreatFox IOC Lookup**: credential is "Threatfox Abuse.ch Header Credential". Connected to Execute Plan only.
-   * **OTX Pulse Search**: credential is "OTX Header Auth". Connected to Execute Plan only.
-   * **Feodo Tracker**: no auth; public JSON endpoint. Connected to Execute Plan only.
+   * **OTX IOC Lookup**: credential is "OTX Header Auth". Connected to Execute Plan only.
    * **Summarize / Plan / Execute agents**: system message field is populated (paste from `prompts/summarize.md`, `prompts/plan.md`, `prompts/execute.md` if anything looks truncated). Execute agent has Retry On Fail enabled (3 tries, 5s wait).
    * **Post Summary / Post Plan / Post Result**: channelId is `={{ $('Build Context').item.json.channel }}`. Other Options shows `thread_ts` set to `={{ $('Build Context').item.json.thread_parent_ts }}`. Slack credential is "Slack account".
 

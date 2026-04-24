@@ -41,3 +41,11 @@ Keep schema exploration to 1–3 tool calls. Use them to verify index names and 
 ## What the next step will do
 
 The Execute step has the full Scanner MCP tool set (including `execute_query` and `fetch_query_results`) and will call `get_scanner_context` on its own. Your plan should name indexes and fields specifically when you know them; where you're unsure, it's fine to phrase a bullet at the intent level ("search the identity provider logs for failed logins from this user") and let Execute resolve the exact index.
+
+## Tools the Execute step has available
+
+Your plan MUST only reference tools that Execute can actually call. The full list:
+
+* **Scanner MCP** (full set): `execute_query`, `fetch_query_results`, `get_scanner_context`, `get_top_columns`, `get_docs`. Used for all log queries, schema lookups, and Scanner docs.
+* **ThreatFox IOC Lookup**: reputation check against abuse.ch ThreatFox. REQUIRED param `ioc` (string): IP, domain, URL, or file hash. Returns match details or not_in_list.
+* **OTX IOC Lookup**: direct AlienVault OTX indicator lookup. REQUIRED params: `type` (one of `IPv4`, `IPv6`, `domain`, `hostname`, `url`, `file`, `cve`) and `value` (the indicator). Returns community pulses referencing the indicator with malware family, MITRE mappings, and context.

@@ -44,8 +44,7 @@ Before importing `workflow.json`, create these credentials in n8n's **Credential
    * **Anthropic Chat Model**: credential set to "Anthropic account". Model is `claude-opus-4-7` (swap to `claude-sonnet-4-7` if you hit overload errors).
    * **Scanner MCP**: endpoint URL is your tenant's MCP URL (replace `mcp.your-env.scanner.dev` with the real hostname). Credential is "Scanner API/MCP Bearer Auth account".
    * **ThreatFox IOC Lookup**: credential is "Threatfox Abuse.ch Header Credential".
-   * **OTX Pulse Search**: credential is "OTX Header Auth".
-   * **Feodo Tracker**: no auth; public JSON endpoint.
+   * **OTX IOC Lookup**: credential is "OTX Header Auth".
    * **Alert Triage Agent**: system message field contains the full body of `prompts/triage-agent.md`. Import copies it, but verify it is not truncated.
    * **Send a message**: channel ID is set to your target Slack channel (replace the placeholder).
 
@@ -67,7 +66,7 @@ Before importing `workflow.json`, create these credentials in n8n's **Credential
      -H "Content-Type: application/json" \
      -d @sample-payloads/example-alert-iam-admin-attach.json
    ```
-4. Watch the execution in the n8n UI. Expected: the agent calls Scanner MCP tools (`get_scanner_context`, `execute_query`, `fetch_query_results`) over multiple turns, enriches any external IOCs it sees via ThreatFox / OTX / Feodo, then emits the Slack formatted finding. The Slack node posts it.
+4. Watch the execution in the n8n UI. Expected: the agent calls Scanner MCP tools (`get_scanner_context`, `execute_query`, `fetch_query_results`) over multiple turns, enriches any external IOCs it sees via ThreatFox / OTX, then emits the Slack formatted finding. The Slack node posts it.
 
 ## Wire up a real Scanner event sink
 

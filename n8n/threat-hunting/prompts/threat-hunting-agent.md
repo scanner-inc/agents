@@ -26,10 +26,11 @@ The user message includes pre-fetched CISA Known Exploited Vulnerabilities (top 
    * Identity provider logs → prioritize auth-related CVEs
    * Network logs → prioritize CVEs in network-facing products
 6. Use the **ThreatFox Search** tool to get IOCs tied to the most relevant CVEs, malware families, or threat actors. Focus on IOC types that are actually searchable in the available log sources.
-7. Use the **OTX Pulse Search** tool to find community threat intel pulses on the CVE or campaign. Pulses often include additional IOCs, MITRE mappings, and context that KEV and ThreatFox alone miss.
-8. Use the **Feodo Tracker** tool to pull current botnet C2 IPs. This is especially useful when you have network flow, firewall, or DNS logs.
-9. If no CISA KEV entries are relevant to the environment, pivot to hunting for the freshest ThreatFox and Feodo IOCs against searchable log fields (e.g., known-bad C2 IPs in CloudTrail source IPs, malicious domains in DNS logs).
-10. **Determine search time range** based on threat intel timeline:
+7. Use the **OTX Pulse Search** tool to find community threat intel pulses on a CVE or campaign. Pulses often include additional IOCs, MITRE mappings, and context that KEV and ThreatFox alone miss. Use this for free-text keyword queries (malware family names, threat actor names, campaign names).
+8. Use the **OTX IOC Lookup** tool whenever you have a *concrete* indicator during the hunt (an IP surfaced from a log sweep, a suspicious domain, a file hash, or a CVE ID). It's a direct key-value lookup — much faster than Pulse Search. Prefer it over Pulse Search for any indicator type (IPv4, IPv6, domain, hostname, url, file, cve).
+9. Use the **Feodo Tracker** tool to pull current botnet C2 IPs. This is especially useful when you have network flow, firewall, or DNS logs.
+10. If no CISA KEV entries are relevant to the environment, pivot to hunting for the freshest ThreatFox and Feodo IOCs against searchable log fields (e.g., known-bad C2 IPs in CloudTrail source IPs, malicious domains in DNS logs).
+11. **Determine search time range** based on threat intel timeline:
     * When was the vulnerability first disclosed or added to KEV?
     * When were the IOCs first reported (ThreatFox first_seen, OTX pulse creation date)?
     * When did active exploitation campaigns begin?

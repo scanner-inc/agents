@@ -32,7 +32,7 @@
       "id": "b4868daa-74f7-47b3-8a65-e3b398aeef17",
       "name": "Daily Report Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.7,
+      "typeVersion": 3.1,
       "position": [
         224,
         0
@@ -91,31 +91,20 @@
       "parameters": {
         "toolDescription": "List Scanner detection rules for the current tenant. The tenant is bound to the credentials automatically; you do not need to provide it. Returns rules with: id, name, description, severity, query_text, tags (MITRE tactics/techniques), enabled_state_override, last_alerted_at, created_at, updated_at. Response also includes pagination.next_page_token. Page size is fixed at 1000. To fetch the next page, pass next_page_token set to the previous response's next_page_token; pass an empty string on the first call.",
         "url": "https://api.your-env.scanner.dev/v1/detection_rule",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "httpBearerAuth",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
         "sendQuery": true,
-        "parametersQuery": {
-          "values": [
-            {
-              "name": "tenant_id",
-              "valueProvider": "fieldValue",
-              "value": "REPLACE_WITH_TENANT_UUID"
-            },
-            {
-              "name": "pagination[page_size]",
-              "valueProvider": "fieldValue",
-              "value": "1000"
-            },
-            {
-              "name": "pagination[page_token]",
-              "valueProvider": "fieldValue",
-              "value": "={{ $fromAI('next_page_token', 'Pagination cursor: pass next_page_token from the previous response, or empty string on the first call.') }}"
-            }
+        "queryParameters": {
+          "parameters": [
+            { "name": "tenant_id", "value": "REPLACE_WITH_TENANT_UUID" },
+            { "name": "pagination[page_size]", "value": "1000" },
+            { "name": "pagination[page_token]", "value": "={{ $fromAI('next_page_token', 'Pagination cursor: pass next_page_token from the previous response, or empty string on the first call.', 'string') }}" }
           ]
-        }
+        },
+        "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
-      "typeVersion": 1.1,
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
       "position": [
         448,
         208
