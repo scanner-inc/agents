@@ -1,0 +1,10 @@
+{
+  "_comment": "This is the event shape n8n's Slack Trigger emits, already unwrapped from Slack's event_callback envelope. When testing the workflow manually, replace REPLACE_WITH_TEST_CHANNEL_ID and REPLACE_WITH_REAL_MESSAGE_TS with real values.",
+  "type": "app_mention",
+  "user": "U0123456789",
+  "text": "<@U9999999999> can you dive deeper into the Lambda function operations? I feel like there is more to see there.",
+  "ts": "REPLACE_WITH_REAL_MESSAGE_TS",
+  "channel": "REPLACE_WITH_TEST_CHANNEL_ID",
+  "thread_ts": "REPLACE_WITH_REAL_THREAD_PARENT_TS",
+  "event_ts": "REPLACE_WITH_REAL_MESSAGE_TS"
+}

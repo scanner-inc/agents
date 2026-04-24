@@ -9,6 +9,7 @@ Deployable n8n workflows that pair Claude with [Scanner](https://scanner.dev) MC
 | **[`alert-triage/`](./alert-triage)** | Webhook (Scanner event sink) | Investigates a detection alert via Scanner MCP, classifies as BENIGN / SUSPICIOUS / MALICIOUS with evidence, and posts a structured finding to Slack. |
 | **[`daily-reporting/`](./daily-reporting)** | Schedule (daily) | Reports on log source volume, detection rule coverage, MITRE coverage, and alert counts. Recommends next log sources and detections to close gaps. |
 | **[`threat-hunting/`](./threat-hunting)** | Schedule (every 6 hours) | Pulls fresh IOCs from CISA KEV, ThreatFox, OTX, and Feodo Tracker; sweeps historical Scanner logs for matches; posts a findings report to Slack. |
+| **[`slack-bot/`](./slack-bot)** | Slack `app_mention` | Interactive `@`-mention bot. Reads thread or channel context, summarizes the ask, posts a plan, then executes against Scanner MCP and posts a finding, all threaded under the mention. |
 
 ## Structure of each workflow folder
 
