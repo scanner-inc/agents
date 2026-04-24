@@ -5,6 +5,8 @@
 * n8n instance (local via Docker or hosted). For local, see the primer in `2026_04_April/claude_demos_and_autonomous_agents/n8n_primer.md`.
 * Anthropic API key.
 * Scanner account with MCP access. Scanner MCP URL in the form `https://mcp.<your-env>.scanner.dev/v1/mcp` and a Scanner MCP API key.
+* An [AlienVault OTX](https://otx.alienvault.com/) API key (free).
+* An [abuse.ch](https://auth.abuse.ch/) auth key (free). Used for the ThreatFox API.
 * Slack workspace connected to n8n.
 
 ## Credentials to create in n8n
@@ -24,6 +26,14 @@ Before importing `workflow.json`, create these credentials in n8n's **Credential
    * Name: `x-scanner-to-n8n-webhook-key`
    * Value: a random secret string you generate (no prefix, just the raw secret). Save it; you will paste the same value into the Scanner event sink below.
 
+5. **OTX Header Auth** (type: HTTP Header Auth)
+   * Name: `X-OTX-API-KEY`
+   * Value: your AlienVault OTX API key.
+
+6. **Threatfox Abuse.ch Header Credential** (type: HTTP Header Auth)
+   * Name: `Auth-Key`
+   * Value: your abuse.ch auth key. Used for the ThreatFox endpoint.
+
 ## Import the workflow
 
 1. In n8n, go to **Workflows** → **Import from File**.
@@ -33,6 +43,9 @@ Before importing `workflow.json`, create these credentials in n8n's **Credential
    * **Alert Triage Agent**: Retry On Fail enabled (3 tries, 5s wait).
    * **Anthropic Chat Model**: credential set to "Anthropic account". Model is `claude-opus-4-7` (swap to `claude-sonnet-4-7` if you hit overload errors).
    * **Scanner MCP**: endpoint URL is your tenant's MCP URL (replace `mcp.your-env.scanner.dev` with the real hostname). Credential is "Scanner API/MCP Bearer Auth account".
+   * **ThreatFox IOC Lookup**: credential is "Threatfox Abuse.ch Header Credential".
+   * **OTX Pulse Search**: credential is "OTX Header Auth".
+   * **Feodo Tracker**: no auth; public JSON endpoint.
    * **Alert Triage Agent**: system message field contains the full body of `prompts/triage-agent.md`. Import copies it, but verify it is not truncated.
    * **Send a message**: channel ID is set to your target Slack channel (replace the placeholder).
 
@@ -54,7 +67,7 @@ Before importing `workflow.json`, create these credentials in n8n's **Credential
      -H "Content-Type: application/json" \
      -d @sample-payloads/example-alert-iam-admin-attach.json
    ```
-4. Watch the execution in the n8n UI. Expected: the agent calls Scanner MCP tools (`get_scanner_context`, `execute_query`, `fetch_query_results`) over multiple turns, then emits the Slack formatted finding. The Slack node posts it.
+4. Watch the execution in the n8n UI. Expected: the agent calls Scanner MCP tools (`get_scanner_context`, `execute_query`, `fetch_query_results`) over multiple turns, enriches any external IOCs it sees via ThreatFox / OTX / Feodo, then emits the Slack formatted finding. The Slack node posts it.
 
 ## Wire up a real Scanner event sink
 

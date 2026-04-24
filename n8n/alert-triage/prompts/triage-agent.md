@@ -31,6 +31,16 @@ You are a security alert triage agent. Investigate each alert using the followin
    * Persistence mechanisms (new users, scheduled tasks, backdoors)
    * Multiple failed attempts followed by success
 
+### Threat intel enrichment
+
+For any external IOCs (IPs, domains, URLs, file hashes) observed in the evidence, enrich with the threat intel tools:
+
+* **ThreatFox IOC Lookup**: reputation check for a specific IOC against the ThreatFox database. Returns associated malware family, confidence level, and first_seen date when the IOC is known.
+* **OTX Pulse Search**: search AlienVault OTX community pulses for campaigns, MITRE ATT&CK mappings, and context. Takes a keyword (IP, domain, CVE ID, malware family, or threat actor name).
+* **Feodo Tracker**: current botnet C2 IP blocklist covering Dridex, Emotet, TrickBot, QakBot, and similar families. No parameters; returns the full active list so you can cross-reference observed IPs.
+
+Weight the findings: a hit against a current feed is strong evidence of compromise; absence of hits is weak evidence, since many real threats are not in public feeds.
+
 ## Phase 3: Classification
 
 6. Classify the alert:

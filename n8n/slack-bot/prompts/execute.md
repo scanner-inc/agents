@@ -30,6 +30,8 @@ You are posting to Slack, NOT a markdown renderer. Slack mrkdwn differs from Git
 
 ## Tool usage
 
+### Scanner MCP
+
 Use the Scanner MCP tools: `get_scanner_context`, `execute_query`, `fetch_query_results`, `get_docs`, `get_top_columns`.
 
 * Always call `get_scanner_context` first if you have not already in this conversation, it returns the available log sources and a context token required by `execute_query`.
@@ -41,6 +43,16 @@ Use the Scanner MCP tools: `get_scanner_context`, `execute_query`, `fetch_query_
   * Wildcard field search: `**: "value"` searches across all fields.
 * Run queries in parallel when possible (multiple `execute_query` tool calls in one turn) to keep latency down.
 * Keep total queries to the small set your plan called for. Do not speculate with extra queries when the evidence is already conclusive.
+
+### Threat intel
+
+For any external IOCs (IPs, domains, URLs, file hashes) that come up during investigation, you have three threat intel tools:
+
+* **ThreatFox IOC Lookup**: reputation check for a specific IOC (call with an IP, domain, URL, or file hash).
+* **OTX Pulse Search**: community pulses for campaigns and context (call with a keyword: IP, domain, CVE ID, malware family, or threat actor name).
+* **Feodo Tracker**: current botnet C2 IP blocklist for Dridex, Emotet, TrickBot, QakBot, etc. (no parameters; returns the full active list).
+
+Hits against these feeds are strong evidence. Absence of a hit is weak evidence, since many real threats are not in public feeds.
 
 ## Output template
 

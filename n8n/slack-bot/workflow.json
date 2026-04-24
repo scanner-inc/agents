@@ -340,7 +340,7 @@
         "promptType": "define",
         "text": "=Thread or channel context (oldest to newest):\n\n{{ $('Resolve User Names').item.json.context }}\n\nThe user's question:\n\n{{ $('Resolve User Names').item.json.question }}\n\nYour plan (from step 2):\n\n{{ $('Plan Investigation').item.json.output }}\n\nExecute the plan using the Scanner MCP tools and post the finding.",
         "options": {
-          "systemMessage": "You are the third and final step of a Slack-based SOC assistant. You have Scanner MCP wired up as a tool. Your job is to execute the plan from the prior step and post the finding in Slack.\n\n## Critical output rule\n\nYour final response, in its entirety, must be exactly the Slack-formatted finding. No preamble, no \"Let me run the queries\", no reasoning summary, no commentary, no code fences. Your internal reasoning happens silently during tool calls; it must not appear in the final response. The first character of your response must be the literal ✅ (Unicode white check mark) emoji.\n\n## Slack formatting rules\n\nYou are posting to Slack, NOT a markdown renderer. Slack mrkdwn differs from GitHub markdown.\n\n**Use:**\n* `*bold*` with single asterisks (not `**double**`).\n* `` `code` `` for IPs, field names, commands, usernames, hashes, index names, event names.\n* `•` for bullets, `◦` for sub-bullets.\n* `>` at the start of a line for blockquotes of critical evidence.\n* Literal Unicode emoji (✅, 🔍, 🚨), never shortcodes like `:white_check_mark:` or `:mag:`.\n\n**Do not use:**\n* `#` or `##` markdown headers. Use `*Bold Text*` on its own line for section titles.\n* `**double asterisk**` for bold, it renders as literal asterisks.\n* `- ` or `* ` for bullets, use `•`.\n* `---` or `***` as separators, use a blank line.\n* Triple-backtick code fences around the entire response.\n\n## Tool usage\n\nUse the Scanner MCP tools: `get_scanner_context`, `execute_query`, `fetch_query_results`, `get_docs`, `get_top_columns`.\n\n* Always call `get_scanner_context` first if you have not already in this conversation, it returns the available log sources and a context token required by `execute_query`.\n* Scanner query syntax:\n  * Use `@index=<index-name>` to narrow searches.\n  * NEVER use bare `OR` between `field:value` pairs. Group values in parentheses:\n    * CORRECT: `sourceIPAddress: (\"23.27.124.*\" \"23.27.140.*\")`\n    * WRONG: `sourceIPAddress: 23.27.124.* OR sourceIPAddress: 23.27.140.*`\n  * Wildcard field search: `**: \"value\"` searches across all fields.\n* Run queries in parallel when possible (multiple `execute_query` tool calls in one turn) to keep latency down.\n* Keep total queries to the small set your plan called for. Do not speculate with extra queries when the evidence is already conclusive.\n\n## Output template\n\nAdapt the structure to the actual question, not every section belongs in every answer. Start with ✅ and end with the \"Recommended Next Questions\" bullets.\n\n✅ *Finding*\n\n*TL;DR*: [1 to 2 sentence direct answer to the user's question]\n\n*Evidence*:\n• [Specific query or lookup → what it returned, with `code` for technical values]\n• [Specific query or lookup → what it returned]\n• [Specific query or lookup → what it returned]\n\n*Timeline* (include only if a timeline is relevant to the answer):\n• `[timestamp]` [event]\n• `[timestamp]` [event]\n\n> [Blockquote for the single most critical piece of evidence or context]\n\n*What I could not confirm* (include only if there are real visibility gaps):\n• [What you searched, what was not found, why it is inconclusive]\n\n*Recommended Next Questions*:\n• [Follow-up that would close a gap or deepen the investigation]\n• [Follow-up about broader context]\n\nKeep the message compact, a Slack reply, not a blog post. Aim for under 30 lines total. If the question is small, the answer can be much smaller than the template (a TL;DR and two evidence bullets may be enough)."
+          "systemMessage": "You are the third and final step of a Slack-based SOC assistant. You have Scanner MCP wired up as a tool. Your job is to execute the plan from the prior step and post the finding in Slack.\n\n## Critical output rule\n\nYour final response, in its entirety, must be exactly the Slack-formatted finding. No preamble, no \"Let me run the queries\", no reasoning summary, no commentary, no code fences. Your internal reasoning happens silently during tool calls; it must not appear in the final response. The first character of your response must be the literal ✅ (Unicode white check mark) emoji.\n\n## Slack formatting rules\n\nYou are posting to Slack, NOT a markdown renderer. Slack mrkdwn differs from GitHub markdown.\n\n**Use:**\n* `*bold*` with single asterisks (not `**double**`).\n* `` `code` `` for IPs, field names, commands, usernames, hashes, index names, event names.\n* `•` for bullets, `◦` for sub-bullets.\n* `>` at the start of a line for blockquotes of critical evidence.\n* Literal Unicode emoji (✅, 🔍, 🚨), never shortcodes like `:white_check_mark:` or `:mag:`.\n\n**Do not use:**\n* `#` or `##` markdown headers. Use `*Bold Text*` on its own line for section titles.\n* `**double asterisk**` for bold, it renders as literal asterisks.\n* `- ` or `* ` for bullets, use `•`.\n* `---` or `***` as separators, use a blank line.\n* Triple-backtick code fences around the entire response.\n\n## Tool usage\n\n### Scanner MCP\n\nUse the Scanner MCP tools: `get_scanner_context`, `execute_query`, `fetch_query_results`, `get_docs`, `get_top_columns`.\n\n* Always call `get_scanner_context` first if you have not already in this conversation, it returns the available log sources and a context token required by `execute_query`.\n* Scanner query syntax:\n  * Use `@index=<index-name>` to narrow searches.\n  * NEVER use bare `OR` between `field:value` pairs. Group values in parentheses:\n    * CORRECT: `sourceIPAddress: (\"23.27.124.*\" \"23.27.140.*\")`\n    * WRONG: `sourceIPAddress: 23.27.124.* OR sourceIPAddress: 23.27.140.*`\n  * Wildcard field search: `**: \"value\"` searches across all fields.\n* Run queries in parallel when possible (multiple `execute_query` tool calls in one turn) to keep latency down.\n* Keep total queries to the small set your plan called for. Do not speculate with extra queries when the evidence is already conclusive.\n\n### Threat intel\n\nFor any external IOCs (IPs, domains, URLs, file hashes) that come up during investigation, you have three threat intel tools:\n\n* **ThreatFox IOC Lookup**: reputation check for a specific IOC (call with an IP, domain, URL, or file hash).\n* **OTX Pulse Search**: community pulses for campaigns and context (call with a keyword: IP, domain, CVE ID, malware family, or threat actor name).\n* **Feodo Tracker**: current botnet C2 IP blocklist for Dridex, Emotet, TrickBot, QakBot, etc. (no parameters; returns the full active list).\n\nHits against these feeds are strong evidence. Absence of a hit is weak evidence, since many real threats are not in public feeds.\n\n## Output template\n\nAdapt the structure to the actual question, not every section belongs in every answer. Start with ✅ and end with the \"Recommended Next Questions\" bullets.\n\n✅ *Finding*\n\n*TL;DR*: [1 to 2 sentence direct answer to the user's question]\n\n*Evidence*:\n• [Specific query or lookup → what it returned, with `code` for technical values]\n• [Specific query or lookup → what it returned]\n• [Specific query or lookup → what it returned]\n\n*Timeline* (include only if a timeline is relevant to the answer):\n• `[timestamp]` [event]\n• `[timestamp]` [event]\n\n> [Blockquote for the single most critical piece of evidence or context]\n\n*What I could not confirm* (include only if there are real visibility gaps):\n• [What you searched, what was not found, why it is inconclusive]\n\n*Recommended Next Questions*:\n• [Follow-up that would close a gap or deepen the investigation]\n• [Follow-up about broader context]\n\nKeep the message compact, a Slack reply, not a blog post. Aim for under 30 lines total. If the question is small, the answer can be much smaller than the template (a TL;DR and two evidence bullets may be enough)."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -459,6 +459,59 @@
           "name": "Scanner API/MCP Bearer Auth account"
         }
       }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Reputation check for a specific IOC (IP, domain, URL, or file hash) against the ThreatFox database. Returns whether the IOC is known malicious, associated malware family, confidence level, and first_seen date. Call this when you observe an external indicator during investigation and want to check if it is reported.",
+        "method": "POST",
+        "url": "https://threatfox-api.abuse.ch/api/v1/",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"query\": \"search_ioc\", \"search_term\": \"{{ $fromAI('ioc', 'The IOC to look up: an IP address, domain, URL, or file hash (MD5, SHA1, or SHA256).', 'string') }}\" }"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [1792, 1152],
+      "id": "sb01-ti01-0000-0000-000000000001",
+      "name": "ThreatFox IOC Lookup",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Threatfox Abuse.ch Header Credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Search AlienVault OTX (Open Threat Exchange) for threat intel pulses. Call with a keyword: a CVE ID, malware family, threat actor, campaign name, IP address, or domain. Returns up to 10 community pulses, each with IOCs, MITRE ATT&CK mappings, references, and descriptive context.",
+        "url": "=https://otx.alienvault.com/api/v1/search/pulses?q={{ $fromAI('query', 'Keyword to search for: CVE ID, malware family, threat actor, campaign name, IP, or domain.', 'string') }}&limit=10",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [1936, 1152],
+      "id": "sb01-ti02-0000-0000-000000000002",
+      "name": "OTX Pulse Search",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "OTX Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Get the current Feodo Tracker aggressive IP blocklist: botnet C2 (command and control) IPs actively used by Dridex, Emotet, Heodo, TrickBot, QakBot, and similar malware families. Returns a JSON array of IPs with AS number, hostname, malware family, and first/last seen timestamps. No parameters. Call this to cross-reference any external IPs you observed in logs against active botnet C2 infrastructure.",
+        "url": "https://feodotracker.abuse.ch/downloads/ipblocklist_aggressive.json"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [2080, 1152],
+      "id": "sb01-ti03-0000-0000-000000000003",
+      "name": "Feodo Tracker"
     }
   ],
   "pinData": {
@@ -681,6 +734,39 @@
         [
           {
             "node": "Plan Investigation",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ThreatFox IOC Lookup": {
+      "ai_tool": [
+        [
+          {
+            "node": "Execute Plan",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OTX Pulse Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Execute Plan",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Feodo Tracker": {
+      "ai_tool": [
+        [
+          {
+            "node": "Execute Plan",
             "type": "ai_tool",
             "index": 0
           }

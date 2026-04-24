@@ -5,6 +5,8 @@
 * n8n instance reachable from Slack. For local development use `--tunnel` or an ngrok URL so Slack can POST events to the trigger.
 * Anthropic API key.
 * Scanner account with MCP access. Scanner MCP URL in the form `https://mcp.<your-env>.scanner.dev/v1/mcp` and a Scanner MCP API key (read-only scope).
+* An [AlienVault OTX](https://otx.alienvault.com/) API key (free).
+* An [abuse.ch](https://auth.abuse.ch/) auth key (free). Used for the ThreatFox API.
 * Slack workspace admin (or someone who can install a new Slack app).
 
 ## 1. Create the Slack app
@@ -63,6 +65,14 @@ Before importing `workflow.json`, create these credentials in n8n's **Credential
 3. **Scanner API/MCP Bearer Auth account** (type: HTTP Bearer Auth)
    * Bearer Token: your Scanner MCP API key. Paste just the token; n8n adds the `Bearer ` prefix.
 
+4. **OTX Header Auth** (type: HTTP Header Auth)
+   * Name: `X-OTX-API-KEY`
+   * Value: your AlienVault OTX API key.
+
+5. **Threatfox Abuse.ch Header Credential** (type: HTTP Header Auth)
+   * Name: `Auth-Key`
+   * Value: your abuse.ch auth key. Used for the ThreatFox endpoint.
+
 ## 3. Import the workflow
 
 1. In n8n, go to **Workflows** → **Import from File**.
@@ -72,7 +82,10 @@ Before importing `workflow.json`, create these credentials in n8n's **Credential
    * **Get Thread Replies** and **Get Channel History**: credential type is "Predefined Credential Type" → "Slack API" → "Slack account".
    * **Resolve User Names**: Code node that extracts user IDs from the context, calls `users.info` per ID in parallel via the Slack credential, and rewrites the context with display names. Uses the "Slack account" credential internally via `this.helpers.httpRequestWithAuthentication`. No configuration needed on the node itself.
    * **Anthropic Chat Model**: credential is "Anthropic account", model is Claude Opus 4.7. Verify the model name resolves in the dropdown; older n8n builds may not list 4.x models, upgrade your n8n image if it's missing.
-   * **Scanner MCP (Schema)** and **Scanner MCP**: both endpoint URLs are your tenant's MCP URL (replace `mcp.your-env.scanner.dev` with the real hostname in *both* nodes). Credential is "Scanner API/MCP Bearer Auth account" on both. On the **Scanner MCP (Schema)** node, verify the tool filter shows only `get_scanner_context`, `get_top_columns`, `get_docs`, the field may be labeled "Tools to Include" or "Included Tools" in the n8n UI. If the filter dropdown looks empty after import, reselect those three tools manually.
+   * **Scanner MCP (Schema Tools Only)** and **Scanner MCP**: both endpoint URLs are your tenant's MCP URL (replace `mcp.your-env.scanner.dev` with the real hostname in *both* nodes). Credential is "Scanner API/MCP Bearer Auth account" on both. On the **Scanner MCP (Schema Tools Only)** node, verify the tool filter shows only `get_scanner_context`, `get_top_columns`, `get_docs`, the field may be labeled "Tools to Include" or "Included Tools" in the n8n UI. If the filter dropdown looks empty after import, reselect those three tools manually.
+   * **ThreatFox IOC Lookup**: credential is "Threatfox Abuse.ch Header Credential". Connected to Execute Plan only.
+   * **OTX Pulse Search**: credential is "OTX Header Auth". Connected to Execute Plan only.
+   * **Feodo Tracker**: no auth; public JSON endpoint. Connected to Execute Plan only.
    * **Summarize / Plan / Execute agents**: system message field is populated (paste from `prompts/summarize.md`, `prompts/plan.md`, `prompts/execute.md` if anything looks truncated). Execute agent has Retry On Fail enabled (3 tries, 5s wait).
    * **Post Summary / Post Plan / Post Result**: channelId is `={{ $('Build Context').item.json.channel }}`. Other Options shows `thread_ts` set to `={{ $('Build Context').item.json.thread_parent_ts }}`. Slack credential is "Slack account".
 
