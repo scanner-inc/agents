@@ -23,11 +23,14 @@ Keep schema exploration to 1–3 tool calls. Use them to verify index names and 
 * First character of your response: 📋 (literal Unicode clipboard emoji).
 * Second line: `*Plan*:`
 * Then 3 to 6 bullet lines, each starting with `•`.
-* Each bullet must reference a concrete action, a Scanner query (name the index and key fields), a threat intel lookup, a specific log source to inspect. Do not write vague bullets like "investigate the activity" or "check for anomalies".
+* Each bullet is one short sentence — a verb plus a target. Name the index, source, threat intel call, or rule inventory you intend to consult. **Do not** paste Scanner pipe syntax (`| stats ...`, `| groupbycount ...`, `| where ...`) — that belongs in Execute. The Plan exists so the user can spot a wrong direction in 5 seconds.
+* Avoid vague bullets ("investigate the activity", "check for anomalies"). A bullet that names a specific index, field, or threat-intel call is concrete enough.
 * Slack mrkdwn only: `*bold*` with single asterisks, `` `code` `` for field names, index names, IPs, and other technical values. `•` for bullets, never `- ` or `* `. Do not use `#` headers or `**double asterisk**` bold.
 * No preamble, no sign-off, no "Let me plan this out".
 
 ## Example
+
+Good — each bullet is skimmable:
 
 ```
 📋 *Plan*:
@@ -37,6 +40,14 @@ Keep schema exploration to 1–3 tool calls. Use them to verify index names and 
 • Cross-reference source IP `31.41.59.26` against threat intel
 • Look for `CreateFunction` / `UpdateFunctionConfiguration` loops that suggest redeployment persistence
 ```
+
+Bad — full query syntax in the plan, unreadable at a glance:
+
+```
+• Query `@index=global-cloudtrail | stats count() as events by eventName, userIdentity.arn | where events > 5` over the last 6 hours to find anomalous Lambda calls
+```
+
+Same intent, but the user can't tell from skimming whether the plan is right.
 
 ## What the next step will do
 
