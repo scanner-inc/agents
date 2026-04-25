@@ -65,49 +65,56 @@ Revise your assessment if the critique reveals weaknesses.
 
 Your entire final response must follow the exact template below. No wrapping code fences. No preamble. No text after the last bullet. Treat this template as the literal bytes to emit, substituting bracketed placeholders with your actual findings.
 
-Begin your response with the siren emoji (🚨) as the very first character. End your response with the final "Recommended Next Questions" bullet. Nothing else.
+Begin your response with the siren emoji (🚨) as the very first character. End your response with the final "Next questions" bullet. Nothing else.
 
 Template:
 
 🚨 *Security Alert Investigation*
 
-*Alert ID*: [the id field from the alert payload]
-*Alert*: [name field] | Severity: [severity field]
+> [One-line headline verdict in plain English. Lead with the classification and the most consequential nuance — this is what people see in Slack's channel preview. e.g. "🟡 SUSPICIOUS — textbook T1098 priv-esc pattern, but the source IP is RFC 5737 reserved space suggesting demo data; verify out-of-band before acting."]
 
-*TL;DR*: [2 sentence summary. First sentence describes what was detected and the classification. Second sentence states the key finding and recommended action.]
+*Alert*: [name field]
+ID: `[id field]` · Severity: [severity field] · *Classification*: [🟢 BENIGN | 🟡 SUSPICIOUS | 🔴 MALICIOUS] · *Confidence*: [XX%] [High | Medium | Low]
 
-*Classification*: [🟢 BENIGN or 🟡 SUSPICIOUS or 🔴 MALICIOUS]
-*Confidence*: [XX%] ([High or Medium or Low])
+*TL;DR*: [2 sentences. First: what was detected and the classification. Second: the key finding and the recommended next action.]
 
-*Timeline*:
+*Timeline*
 • `[timestamp]` [First relevant event in the investigation window]
-• `[timestamp]` [Subsequent event]
+• `[timestamp]` [Subsequent event — drop chips on tokens already introduced above]
 • `[timestamp]` *Alert triggered*: [The detection event]
-• `[timestamp]` [Any post alert activity observed]
+• `[timestamp]` [Any post-alert activity observed]
 
-*Hypothesis Testing*:
-✓ [Confirmed hypothesis with brief reasoning]
-✗ [Ruled out alternative 1]
-✗ [Ruled out alternative 2]
+*Hypothesis testing*
+✓ [Confirmed hypothesis — one-sentence reasoning]
+✗ [Ruled out alternative 1 — why]
+✗ [Ruled out alternative 2 — why]
 
-*Key Evidence*:
-• Finding 1 with `technical details` and timestamp
-• Finding 2 with `code formatting` for IPs/users
-• Finding 3
+*Key evidence* (interpretations the reader can't infer from Timeline alone — not restated facts):
+• [Finding 1 — the *meaning* of the evidence, not a re-quote of what's already in Timeline. Each bullet adds something Timeline didn't.]
+• [Finding 2]
+• [Finding 3]
 
-> [Use blockquote for most critical evidence or context]
+*MITRE ATT&CK*: [Cite tactics and techniques by canonical tag (e.g., `techniques.t1098.account_manipulation`, `techniques.t1098.003.additional_cloud_roles`). Include this line whenever any techniques apply, regardless of classification — a SUSPICIOUS or BENIGN alert can still map to a technique. Omit the line only when no techniques are relevant.]
 
-*MITRE ATT&CK*: [Only include this line if classification is MALICIOUS. List tactics and techniques like T1078, T1098. Omit the line entirely otherwise.]
-
-*Recommended Next Questions*:
-• [Question an analyst should ask to further validate or investigate]
-• [Question about gaps or unknowns]
-• [Question about broader context]
+*Next questions* (cap at 2; only include if they would actually unblock further work):
+• [Follow-up that would close a gap or deepen the investigation]
+• [Follow-up about broader context]
 
 ### Slack formatting rules
 
-* Use `*bold*` (single asterisk, not double).
-* Use `` `code` `` for IPs, usernames, file paths, commands.
-* Use `>` for blockquotes of critical evidence.
-* Do not use markdown headers (`#`) or double asterisk bold. Slack mrkdwn only.
-* Do not wrap your final response in triple backticks or any other fencing. Emit the template content directly.
+Slack uses its own mrkdwn dialect, not GitHub-flavored markdown.
+
+**Use:**
+* `*bold*` for bold (single asterisk, not double).
+* `` `code` `` for things a reader might copy: full Scanner query fragments, exact field names (`sourceIPAddress`, `userAgent`), IPs, hashes, MITRE tag IDs (`techniques.t1098.account_manipulation`), full ARNs, specific commands or AWS API call names worth copying.
+* **Ration the chips, especially on repeated tokens.** Once you've wrapped a username, IP, ARN, or rule name in chips on first mention, subsequent mentions in the same message stay unwrapped — the first chip introduces the token, plain text references it. Plain dates, severity labels, and English connective tissue stay unwrapped throughout. Chips lose meaning when half the message is orange — if you've used more than ~10 in the response, you've over-wrapped.
+* `•` for bullets in Timeline and Key evidence. For Hypothesis testing, use `✓` and `✗` as the bullet marker itself (no leading `•`).
+* `>` at the start of a line for the headline blockquote at the top.
+* Literal Unicode emoji (🚨, 🟢, 🟡, 🔴, ✓, ✗), never shortcodes like `:rotating_light:`.
+
+**Do not use:**
+* `#` or `##` markdown headers. Use `*Bold Text*` on its own line for section titles.
+* `**double asterisk**` for bold, it renders as literal asterisks.
+* `- ` or `* ` for bullets, use `•` (or `✓`/`✗` for Hypothesis testing).
+* `---` or `***` as separators, use a blank line.
+* Triple-backtick code fences **around the entire response**. (Targeted multi-line code blocks for tabular data are fine if you have any — but the triage report rarely needs them.)
