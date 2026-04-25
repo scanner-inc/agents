@@ -94,7 +94,7 @@ Top firers (24h):
 • [MITRE tactics with zero or near-zero coverage, cited by canonical tag, e.g. "Zero rules: `tactics.ta0043.reconnaissance`, `tactics.ta0011.command_and_control`. Single rule only: `tactics.ta0008.lateral_movement`, `tactics.ta0009.collection`"]
 • [Zombie rules — never fired or last fired >90d ago — count plus one-line characterization, e.g. "55 zombie rules, heavily CloudTrail-focused, worth a tuning review"]
 
-*Recommended next moves* (based on 90-day rule activity, not the 24h window):
+*Recommended next moves* (based on 90-day rule activity):
 • *[Action verb + target, bolded]* — [one-line rationale that doesn't repeat data from Coverage Gaps]
    → unlocks: [comma-separated MITRE tag IDs or detection patterns]
 • *Next action* — rationale
