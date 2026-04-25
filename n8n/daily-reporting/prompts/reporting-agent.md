@@ -61,7 +61,7 @@ Begin your response with the bar chart emoji (📊) as the very first character.
 
 Template:
 
-📊 *Scanner Posture* — [today's date in YYYY-MM-DD]
+📊 *Scanner Daily Posture* — [today's date in YYYY-MM-DD]
 
 > [One-line headline verdict in plain English. Lead with the actionable alert count first if any are present (that's what determines whether someone gets paged); otherwise lead with the dominant data/coverage story. e.g. "0 actionable alerts in the 24h window; ingestion healthy, but 4 of 14 MITRE tactics uncovered and 55 zombie rules need a tuning review."]
 
