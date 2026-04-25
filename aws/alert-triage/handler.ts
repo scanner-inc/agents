@@ -62,45 +62,51 @@ the following methodology:
 
 🚨 *Security Alert Investigation*
 
-*Alert ID*: [The alert_id provided]
-*Alert*: [Name] | Severity: [Level]
+> [One-line headline verdict in plain English. Lead with the classification and the most consequential nuance — this is what people see in Slack's channel preview. e.g. "🟡 SUSPICIOUS — textbook T1098 priv-esc pattern, but the source IP is RFC 5737 reserved space suggesting demo data; verify out-of-band before acting."]
 
-*TL;DR*: [2 sentence summary: First sentence describes what was detected and the classification. Second sentence states the key finding and recommended action.]
+*Alert*: [Name]
+ID: \`[alert_id]\` · Severity: [Level] · *Classification*: [🟢 BENIGN | 🟡 SUSPICIOUS | 🔴 MALICIOUS] · *Confidence*: [XX%] [High | Medium | Low]
 
-*Classification*: [🟢 BENIGN / 🟡 SUSPICIOUS / 🔴 MALICIOUS]
-*Confidence*: [XX%] ([High/Medium/Low])
+*TL;DR*: [2 sentences. First: what was detected and the classification. Second: the key finding and recommended next action. This should match the "summary" field in your JSON output below.]
 
-*Timeline*:
-• \`[Timestamp]\` - [First relevant event in the investigation window]
-• \`[Timestamp]\` - [Subsequent event]
-• \`[Timestamp]\` - *Alert triggered*: [The detection event]
-• \`[Timestamp]\` - [Any post-alert activity observed]
+*Timeline*
+• \`[Timestamp]\` [First relevant event in the investigation window]
+• \`[Timestamp]\` [Subsequent event — drop chips on tokens already introduced above]
+• \`[Timestamp]\` *Alert triggered*: [The detection event]
+• \`[Timestamp]\` [Any post-alert activity observed]
 
-*Hypothesis Testing*:
-✓ [Confirmed hypothesis with brief reasoning]
-✗ [Ruled out alternative 1]
-✗ [Ruled out alternative 2]
+*Hypothesis testing*
+✓ [Confirmed hypothesis — one-sentence reasoning]
+✗ [Ruled out alternative 1 — why]
+✗ [Ruled out alternative 2 — why]
 
-*Key Evidence*:
-• Finding 1 with \`technical details\` and timestamp
-• Finding 2 with \`code formatting\` for IPs/users
-• Finding 3
+*Key evidence* (interpretations the reader can't infer from Timeline alone — not restated facts):
+• [Finding 1 — the *meaning* of the evidence, not a re-quote of what's in Timeline]
+• [Finding 2]
+• [Finding 3]
 
-> [Use blockquote for most critical evidence or context]
+*MITRE ATT&CK*: [Cite by canonical tag where possible (e.g., \`techniques.t1098.account_manipulation\`, \`techniques.t1098.003.additional_cloud_roles\`). Include this line whenever any techniques apply, regardless of classification — a SUSPICIOUS or BENIGN alert can still map to a technique. Omit only when no techniques are relevant.]
 
-*MITRE ATT&CK*: [Only if MALICIOUS - list tactics and techniques like T1078, T1098]
-
-*Recommended Next Questions*:
-• [Question an analyst should ask to further validate or investigate]
-• [Question about gaps or unknowns]
-• [Question about broader context]
+*Next questions* (cap at 2; only include if they would actually unblock further work):
+• [Follow-up that would close a gap or deepen the investigation]
+• [Follow-up about broader context]
 
 **Slack Formatting Rules**:
-- Use *bold* (single asterisk, not double)
-- Use \`code\` for IPs, usernames, file paths, commands
-- Use > for blockquotes/important notes
-- Use ✓ ✗ for hypothesis results
-- Add line breaks between sections for readability
+
+Use:
+- \`*bold*\` for bold (single asterisk, not double)
+- Single-backtick \`code\` formatting for things a reader might copy: full Scanner query fragments, exact field names, IPs, hashes, MITRE tag IDs (\`techniques.t1098.account_manipulation\`), full ARNs, specific commands or AWS API call names worth copying.
+- **Ration the chips, especially on repeated tokens.** Once you've wrapped a username, IP, ARN, or rule name in chips on first mention, subsequent mentions in the same message stay unwrapped — the first chip introduces the token, plain text references it. Plain dates, severity labels, and English connective tissue stay unwrapped throughout. If you've used more than ~10 chips, you've over-wrapped.
+- \`•\` for bullets in Timeline and Key evidence. For Hypothesis testing, use \`✓\` and \`✗\` as the bullet marker itself (no leading \`•\`).
+- \`>\` at the start of a line for the headline blockquote at the top.
+- Literal Unicode emoji (🚨, 🟢, 🟡, 🔴, ✓, ✗), never shortcodes like \`:rotating_light:\`.
+
+Do not use:
+- \`#\` or \`##\` markdown headers; use \`*Bold Text*\` for section titles.
+- \`**double asterisk**\` for bold (renders as literal asterisks).
+- \`- \` or \`* \` for bullets; use \`•\` (or \`✓\`/\`✗\` for Hypothesis testing).
+- \`---\` or \`***\` separators.
+- Triple-backtick code fences around the entire response.
 
 After posting to Slack, respond with a JSON object:
 {
@@ -130,7 +136,10 @@ After posting to Slack, respond with a JSON object:
 }
 
 Notes on fields:
-- "mitre_attack": Only populate for MALICIOUS classifications. Empty list otherwise.
+- "mitre_attack": Populate whenever any MITRE techniques apply, regardless of classification.
+  Cite by canonical tag (e.g., "techniques.t1098.account_manipulation",
+  "techniques.t1078.valid_accounts"). SUSPICIOUS and BENIGN classifications can still have
+  legitimate MITRE mappings — only return an empty list when no techniques apply.
 - "timeline": Chronological events from your investigation window, not just the alert itself.
   Include pre-alert context, the alert trigger, and any post-alert activity.
 - "confidence_pct": Integer 0-100 matching your confidence level.

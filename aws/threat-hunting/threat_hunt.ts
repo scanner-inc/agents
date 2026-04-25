@@ -151,6 +151,9 @@ ${kevContext}
           - Sources: CISA KEV + ThreatFox/OTX/Feodo data
           - Specific IOCs being searched for (IPs, domains, hashes)
           - Time range being searched and why (based on threat timeline)
+        - Apply the same chip discipline as Phase 6 (see Slack Formatting Rules below):
+          ration backticks to copy-paste-able tokens; plain dates and vendor names stay
+          unwrapped. Keep this announcement short — bullets, not paragraphs.
 
         **Phase 4: Historical Log Analysis via Scanner**
         - Query Scanner using the time range determined in Phase 2
@@ -183,52 +186,65 @@ ${kevContext}
         - Identify visibility/telemetry gaps
 
         **Phase 6: Report Findings (Slack post #2)**
-        Post to #${slackChannelName} (channel ID: ${slackChannelId}) using this template:
+        Post to #${slackChannelName} (channel ID: ${slackChannelId}) using this template.
+        Lead with the verdict, then justify it.
 
         🔍 *Threat Hunt Report*
 
-        *Hunt Target*: [CVE ID] — [Vulnerability Name] | [Vendor/Product]
-        *Intel Source*: CISA KEV (added [date]) + [threat report source]
+        > [One-line headline verdict in plain English. The most important sentence in the report — what people see in Slack's channel preview. State the result *and* the most consequential nuance, e.g. "🟢 No evidence of SimpleHelp exploitation across 180 days; the real story is that 4 of 5 KEV entries target log sources we don't ingest — coverage gap, not detection gap."]
 
-        *TL;DR*: [2 sentence summary: First sentence describes what was hunted and the scope. Second sentence states the key finding — whether evidence of exploitation was found or not, and recommended action.]
+        *Hunt*: [CVE ID(s)] — [vulnerability or threat name] | [vendor/product or threat family]
+        *Range*: [start date] → [end date] · *Confidence*: [XX%] [High/Medium/Low] · *Result*: [🟢 NO EVIDENCE FOUND / 🟡 INCONCLUSIVE / 🔴 EVIDENCE OF COMPROMISE]
+        *Intel*: CISA KEV (added [date]) + [ThreatFox / OTX / Feodo / URLhaus / MalwareBazaar as applicable]
 
-        *IOCs Searched*:
-        • \`[IP address]\` — [context, e.g. "C2 server from CrowdStrike report"]
-        • \`[domain.com]\` — [context]
-        • \`[SHA-256 hash]\` — [context, e.g. "malware payload"]
+        *IOCs searched* — [one-line summary, e.g. "all clean, 786 GB scanned"]
+        \`\`\`
+        162.243.103.246   Emotet C2   DigitalOcean        seen 2026-03-07
+        50.16.16.211      QakBot C2   AWS EC2 (online)    seen 2025-12-30
+        ...
+        \`\`\`
+        [1-2 lines of prose context — what each threat-intel tool returned, e.g. "ThreatFox had no IOCs for CVE-2024-57726; OTX Akira pulse yielded contextual TTPs only."]
 
-        *Hunt Results*: [🟢 NO EVIDENCE FOUND / 🟡 INCONCLUSIVE / 🔴 EVIDENCE OF COMPROMISE]
-        *Confidence*: [XX%] ([High/Medium/Low])
-        *Time Range Searched*: [start date] — [end date]
+        [Pick one — *Why this came back clean* for hunts with no hits, *Findings* for hunts with positive hits. Don't emit both.]
+
+        *Why this came back clean*:
+        [1-3 sentences explaining the analytical insight — *why* nothing matched. Examples: "Four of five KEV entries target on-prem appliances not represented in this cloud-native environment." or "Hunt scope necessarily pivoted to generic C2 sweeps because ThreatFox had no IOCs seeded for these CVEs."]
 
         *Findings*:
-        • ✓ or ✗ [Finding 1 — what was searched and what was found/not found]
-        • ✓ or ✗ [Finding 2 with \`technical details\`]
-        • ✓ or ✗ [Finding 3]
+        • ✓ or ✗ [What was searched and what was or was not found, with \`technical details\`]
+        • ✓ or ✗ [Next finding]
 
-        *Timeline*: [Only if suspicious activity found]
-        • \`[Timestamp]\` - [Event description]
-        • \`[Timestamp]\` - [Event description]
+        *Timeline* (only if suspicious activity found; omit the whole section if not):
+        • \`[Timestamp]\` [Event description]
+        • \`[Timestamp]\` [Event description]
 
-        *MITRE ATT&CK*: [Tactics and techniques hunted for, e.g. T1190 Exploit Public-Facing Application, T1059 Command & Scripting Interpreter]
+        *MITRE ATT&CK*: [Tactics and techniques hunted for, cited by canonical tag: \`tactics.ta0011.command_and_control\`, \`techniques.t1190.exploit_public_facing_application\`, etc.]
 
-        > [Blockquote for most critical finding or context]
+        *Visibility gaps* (in order of fixability — closable gaps first, environmental facts last; cap at 4):
+        • *[Most-actionable gap]* — [what hunting capability it would unlock, name the specific IOC or TTP it relates to, e.g. "would have caught egress C2 to AWS-hosted QakBot node \`50.16.16.211\`"]
+        • [Next gap, same structure]
 
-        *Visibility Gaps*:
-        • [Log source or telemetry that was missing or insufficient]
-        • [Time periods with no coverage]
-
-        *Recommended Next Questions*:
-        • [Question an analyst should investigate next, e.g. "Are any of these IPs seen in other customer environments?"]
-        • [Question about visibility gaps, e.g. "Do we have DNS logs that would show resolution of these C2 domains?"]
-        • [Question about broader context, e.g. "Has this vulnerability been exploited against similar environments?"]
+        *Next questions* (cap at 2; only include if they would actually unblock further work):
+        • [Follow-up that would close the most actionable visibility gap or confirm an applicability question]
+        • [Follow-up about scope or broader context]
 
         **Slack Formatting Rules**:
-        - Use *bold* (single asterisk, not double)
-        - Use \`code\` for IPs, usernames, file paths, commands
-        - Use > for blockquotes/important notes
-        - Use emojis for status indicators
-        - Add line breaks between sections for readability
+
+        Use:
+        - \`*bold*\` for bold (single asterisk, not double)
+        - Single-backtick \`code\` formatting for things a reader might copy: IPs, domains, file hashes, CVE IDs, MITRE tag IDs (\`techniques.t1190.exploit_public_facing_application\`), exact field names, Scanner query fragments.
+        - **Ration the chips.** Plain dates (2026-04-24), vendor/product names mentioned in prose, severity labels, and result counts stay unwrapped. Chips lose meaning when half the message is orange — if you've used more than ~10 in the response, you've over-wrapped.
+        - \`•\` for top-level bullets, \`◦\` for sub-bullets.
+        - \`>\` at the start of a line for the headline blockquote at the top.
+        - Triple-backtick fenced code blocks (multi-line) for tabular data — the *IOCs searched* list is the textbook case. Align columns with spaces. Tables-as-prose ("\`162.243.103.246\` (Emotet C2, DigitalOcean), \`50.16.16.211\` (QakBot C2, AWS), …") is the chip-soup failure mode in disguise.
+        - Literal Unicode emoji (🔍, 🟢, 🟡, 🔴, ✓, ✗), never shortcodes.
+
+        Do not use:
+        - \`#\` or \`##\` headers; use \`*Bold Text*\` for section titles.
+        - \`**double asterisk**\` for bold (renders as literal asterisks).
+        - \`- \` or \`* \` for bullets; use \`•\`.
+        - \`---\` or \`***\` separators.
+        - Triple-backtick code fences **around the entire response**. (Targeted multi-line code blocks for tabular data are encouraged — see "Use" above.)
     `;
 
   const start = Date.now();
