@@ -55,18 +55,17 @@ Revise if the critique reveals weaknesses. Run the critique loop twice — once 
 
 ## Phase 5: Final output
 
-Emit the report in terminal markdown using the template below. Substitute bracketed placeholders with actual findings. Omit the `MITRE ATT&CK` line entirely unless the classification is MALICIOUS.
+Emit the report in terminal markdown using the template below. Substitute bracketed placeholders with actual findings.
 
 ```
 🚨 Security Alert Investigation
 
-Alert ID: <id from the alert payload>
-Alert: <name field> | Severity: <severity field>
+> <One-line headline verdict in plain English. Lead with the classification and the most consequential nuance — this is the one sentence a reader who reads nothing else would walk away with. e.g. "🟡 SUSPICIOUS — textbook T1098 priv-esc pattern, but the source IP is RFC 5737 reserved space suggesting demo data; verify out-of-band before acting.">
 
-TL;DR: <2-sentence summary. First sentence: what was detected and the classification. Second: key finding and recommended action.>
+Alert: <name field>
+ID: `<id field>` · Severity: <severity field> · Classification: 🟢 BENIGN | 🟡 SUSPICIOUS | 🔴 MALICIOUS · Confidence: NN% (High | Medium | Low)
 
-Classification: 🟢 BENIGN | 🟡 SUSPICIOUS | 🔴 MALICIOUS
-Confidence: NN% (High | Medium | Low)
+TL;DR: <2 sentences. First: what was detected and the classification. Second: the key finding and the recommended next action.>
 
 Timeline:
 - `<timestamp>` <First relevant event in the investigation window>
@@ -75,21 +74,24 @@ Timeline:
 - `<timestamp>` <Any post-alert activity>
 
 Hypothesis Testing:
-- ✓ <Confirmed hypothesis with brief reasoning>
-- ✗ <Ruled out alternative 1>
-- ✗ <Ruled out alternative 2>
+- ✓ <Confirmed hypothesis — one-sentence reasoning>
+- ✗ <Ruled out alternative 1 — why>
+- ✗ <Ruled out alternative 2 — why>
 
-Key Evidence:
-- <Finding 1 with `technical details` and timestamp>
-- <Finding 2 with `code formatting` for IPs/users>
+Key Evidence (interpretations the reader can't infer from Timeline alone — not restated facts):
+- <Finding 1 — the *meaning* of the evidence, not a re-quote of what's already in Timeline. Each bullet adds something Timeline didn't.>
+- <Finding 2>
 - <Finding 3>
 
-> <Blockquote for the most critical evidence or context>
+MITRE ATT&CK: <Cite tactics and techniques by canonical tag (e.g., `techniques.t1098.account_manipulation`, `techniques.t1098.003.additional_cloud_roles`). Include this line whenever any techniques apply, regardless of classification — a SUSPICIOUS or BENIGN alert can still map to a technique. Omit the line only when no techniques are relevant.>
 
-MITRE ATT&CK: <only if MALICIOUS — list canonical tags like techniques.t1078.valid_accounts>
-
-Recommended Next Questions:
-- <Follow-up to validate or deepen the investigation>
-- <Question about gaps or unknowns>
-- <Question about broader context>
+Next questions (cap at 2; only include if they would actually unblock further work):
+- <Follow-up that would close a gap or deepen the investigation>
+- <Follow-up about broader context>
 ```
+
+Output rules:
+- The verdict blockquote leads. There is no other blockquote in the report — don't scatter `>` lines across sections.
+- Key Evidence carries *interpretations*, not restated facts. If a bullet only re-quotes a Timeline event, drop it.
+- MITRE ATT&CK is included whenever techniques apply, regardless of classification. Only omit if no techniques are relevant.
+- Cap *Next questions* at 2 — and skip the section entirely if the only follow-ups would be filler.

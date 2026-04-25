@@ -11,13 +11,13 @@
   "plugins": [
     {
       "name": "scanner-soc-skills",
-      "description": "Five SOC skills: triage-alert (lookup an alert by id and investigate), threat-hunt (sweep historical logs for fresh threat-intel IOCs), generate-health-report (daily detection-engineering digest), investigate (free-form Scanner Q&A using a summarize -> plan -> execute pattern), and lookup-ioc (one-shot IOC reputation across ThreatFox, OTX, and Feodo Tracker). Requires Scanner MCP configured in Claude Code; the skills also use SCANNER_API_URL / SCANNER_API_KEY for the Detection Rules REST API and OTX_API_KEY / ABUSECH_AUTH_KEY for threat intel.",
+      "description": "Five SOC skills: triage-alert (lookup an alert by id and investigate), threat-hunt (sweep historical logs for fresh threat-intel IOCs), posture-report (daily Scanner posture report), investigate (free-form Scanner Q&A using a summarize -> plan -> execute pattern), and lookup-ioc (one-shot IOC reputation across ThreatFox, OTX, and Feodo Tracker). Requires Scanner MCP configured in Claude Code; the skills also use SCANNER_API_URL / SCANNER_API_KEY for the Detection Rules REST API and OTX_API_KEY / ABUSECH_AUTH_KEY for threat intel.",
       "source": "./",
       "strict": false,
       "skills": [
         "./triage-alert",
         "./threat-hunt",
-        "./generate-health-report",
+        "./posture-report",
         "./investigate",
         "./lookup-ioc"
       ]

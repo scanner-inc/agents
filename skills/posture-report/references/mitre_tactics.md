@@ -1,6 +1,6 @@
 # MITRE ATT&CK tag namespace and Scanner-supported sources
 
-Read this file during Phase 4 (gap analysis) of `generate-health-report`. These are the canonical tag IDs and source slugs to cite verbatim in the report — do not guess from memory.
+Read this file during Phase 4 (gap analysis) of `posture-report`. These are the canonical tag IDs and source slugs to cite verbatim in the report — do not guess from memory.
 
 ## Tactics (14 total)
 

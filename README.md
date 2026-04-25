@@ -8,7 +8,7 @@ Each top-level folder is a different kind of artifact.
 
 - **[`n8n/`](./n8n)**: n8n workflows (visual workflow automation). Importable `workflow.json` files plus READMEs. Good for teams that already use n8n or want non-developers to read and modify agents.
 - **[`aws/`](./aws)**: Claude Agent SDK agents deployed on AWS (Lambda + ECS Fargate) with Terraform. Good for teams that want the agent runtime inside their own VPC, with full control and standard engineering tooling.
-- **[`skills/`](./skills)**: Claude Code skills packaged as a plugin marketplace. Five slash commands — `/triage-alert`, `/threat-hunt`, `/generate-health-report`, `/investigate`, `/lookup-ioc` — that an analyst can invoke directly from `claude` in their terminal. Good for interactive SOC work and ad-hoc investigations without standing up infrastructure.
+- **[`skills/`](./skills)**: Claude Code skills packaged as a plugin marketplace. Five slash commands — `/triage-alert`, `/threat-hunt`, `/posture-report`, `/investigate`, `/lookup-ioc` — that an analyst can invoke directly from `claude` in their terminal. Good for interactive SOC work and ad-hoc investigations without standing up infrastructure.
 
 ## Picking an approach
 

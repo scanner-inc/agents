@@ -47,16 +47,18 @@ Reply in terminal markdown:
 ```
 🔎 IOC lookup — `<indicator>` (`<type>`)
 
-Verdict: <CLEAN | SUSPICIOUS | MALICIOUS> (sources checked: <list>; skipped: <list or none>)
+> <One-line headline verdict in plain English. Lead with the verdict and the most consequential nuance. e.g. "🔴 MALICIOUS — `50.16.16.211` is on the active Feodo blocklist as a QakBot C2 node, last seen 2025-12-30." or "🟢 CLEAN — no hits across ThreatFox + OTX; Feodo skipped (IPv4-only).">
+
+Verdict: 🟢 CLEAN | 🟡 SUSPICIOUS | 🔴 MALICIOUS (sources checked: <list>; skipped: <list or none>)
 
 - ThreatFox: <hit summary or "no result" or "skipped: ...">
 - OTX: <pulse count, top malware families/MITRE, or "no pulses">
 - Feodo: <hit details or "not on blocklist" or "skipped: IPv4-only">
 
-Notes: <any analyst-relevant context — first_seen dates, related campaigns, false-positive risk>
+Notes: <1-2 sentences of analyst-relevant context only — first_seen dates, related campaigns, false-positive risk. Skip the line entirely if no source returned a hit.>
 ```
 
-Verdict rubric: `MALICIOUS` if any source has an active match with high confidence. `SUSPICIOUS` if a source has a weak/old/aged-out match or only context pulses without active C2 evidence. `CLEAN` only when every consulted source returned no result and at least two sources were actually consulted (skipped sources do not count).
+Verdict rubric: `🔴 MALICIOUS` if any source has an active match with high confidence. `🟡 SUSPICIOUS` if a source has a weak/old/aged-out match or only context pulses without active C2 evidence. `🟢 CLEAN` only when every consulted source returned no result and at least two sources were actually consulted (skipped sources do not count).
 
 ## Direct sub-script usage
 

@@ -41,4 +41,4 @@ When the methodology calls for IOC enrichment in Phase 2, prefer invoking the `l
 
 ## Output
 
-Terminal markdown only — see the template at the bottom of `references/methodology.md`. Begin the response with the 🚨 line; end with the final "Recommended Next Questions" bullet. No preamble, no trailing commentary.
+Terminal markdown only — see the template at the bottom of `references/methodology.md`. Begin the response with the 🚨 line; end with the final *Next questions* bullet (or with the *MITRE ATT&CK* line if no follow-ups are worth listing). No preamble, no trailing commentary.

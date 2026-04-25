@@ -53,4 +53,4 @@ Read `references/scanner_query.md` before composing log queries. The two most co
 
 ## Output
 
-Terminal markdown only — see the template in `references/methodology.md`. Begin with `🔍 Threat Hunt Report`. End with the final "Recommended Next Questions" bullet.
+Terminal markdown only — see the template in `references/methodology.md`. Begin with `🔍 Threat Hunt Report`. End with the final *Next questions* bullet (or with the *Visibility gaps* section if no follow-ups are worth listing).

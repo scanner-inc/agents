@@ -21,17 +21,23 @@ Draft a 3-6 bullet investigation plan. Use the **read-only** Scanner MCP tools t
 
 Do **not** run `execute_query` yet. Keep schema exploration to 1-3 tool calls. If you find yourself wanting to search for a specific user or IP, that's a hint the item belongs in a plan bullet, not a tool call at this step.
 
-Write the plan as concrete bullets. Each bullet must reference a specific action, query, or lookup — name the index and field where you can. Avoid vague bullets like "investigate the activity" or "check for anomalies".
+Write the plan as concrete bullets. Each bullet is one short sentence — a verb plus a target. Name the index, source, threat-intel call, or rule inventory you intend to consult. **Do not** paste Scanner pipe syntax (`| stats ...`, `| groupbycount ...`, `| where ...`) — that belongs in Execute. The Plan exists so the user can spot a wrong direction in 5 seconds. Avoid vague bullets like "investigate the activity" or "check for anomalies".
 
-Example of a good plan:
+Good — each bullet is skimmable:
 
 ```
 Plan:
 - Query @index=global-cloudtrail for all lambda:* events in the past 6h, grouped by eventName
 - Filter for operations against function `system-maintenance-handler` specifically
-- Check EventBridge PutRule and PutTargets calls in the same window
-- Cross-reference source IP `31.41.59.26` via lookup-ioc
-- Look for CreateFunction / UpdateFunctionConfiguration loops suggesting redeployment persistence
+- Check EventBridge PutRule and PutTargets calls in the same window to see how the Lambda was wired to a schedule
+- Cross-reference source IP `31.41.59.26` against threat intel
+- Look for CreateFunction / UpdateFunctionConfiguration loops that suggest redeployment persistence
+```
+
+Bad — full query syntax in the plan, unreadable at a glance:
+
+```
+- Query `@index=global-cloudtrail | stats count() as events by eventName, userIdentity.arn | where events > 5` over the last 6 hours to find anomalous Lambda calls
 ```
 
 Print the plan to the user (a short `Plan:` header followed by bullets) before executing. Lets them spot a wrong direction before the queries run.
@@ -51,7 +57,7 @@ Run the plan. Tools available at this step:
 
 ## Output
 
-Read `references/output_template.md` and emit the report exactly as templated. The report begins with `✅ Finding` and ends with the last "Recommended Next Questions" bullet. Aim for under 30 lines.
+Read `references/output_template.md` and emit the report exactly as templated. The report begins with `✅ Finding` and ends with the last *Next questions* bullet. Aim for under 30 lines.
 
 If the question is small ("did this user log in today?"), the answer should be small too — TL;DR and a single evidence bullet may be enough. Don't pad to fit the template.
 

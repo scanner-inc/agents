@@ -58,46 +58,53 @@ If you found hits:
 
 ## Phase 5: Final output
 
-Emit the report in terminal markdown. Substitute bracketed placeholders. Omit the `Timeline` section entirely if no suspicious activity was found.
+Emit the report in terminal markdown. Substitute bracketed placeholders.
 
-```
+````
 🔍 Threat Hunt Report
 
-Hunt Target: <CVE ID or malware family> — <vulnerability name> | <vendor / product>
-Intel Source: <CISA KEV (added <date>) + ThreatFox / OTX / Feodo as applicable>
+> <One-line headline verdict in plain English. The most important sentence in the report — the one a reader who reads nothing else would walk away with. State the result *and* the most consequential nuance, e.g. "🟢 No evidence of SimpleHelp exploitation across 180 days; the real story is that 4 of 5 KEV entries target log sources we don't ingest — coverage gap, not detection gap.">
 
-TL;DR: <2 sentences. First: what was hunted and the scope. Second: whether evidence of exploitation was found, and the recommended action.>
+Hunt: <CVE ID(s)> — <vulnerability or threat name> | <vendor/product or threat family>
+Range: <start date> → <end date> · Confidence: NN% (High | Medium | Low) · Result: 🟢 NO EVIDENCE FOUND | 🟡 INCONCLUSIVE | 🔴 EVIDENCE OF COMPROMISE
+Intel: CISA KEV (added <date>) + <ThreatFox / OTX / Feodo as applicable>
 
-IOCs Searched:
-- `<IP>` — <context, e.g. "C2 server from ThreatFox, malware family X">
-- `<domain>` — <context>
-- `<sha256 hash>` — <context, "malware payload first seen 2026-02-10">
+IOCs searched — <one-line summary, e.g. "all clean, 786 GB scanned">
+```
+162.243.103.246   Emotet C2   DigitalOcean        seen 2026-03-07
+50.16.16.211      QakBot C2   AWS EC2 (online)    seen 2025-12-30
+api.malicious.example   Akira C2   first-seen 2026-01-12
+```
+<1-2 lines of prose context — what each threat-intel tool returned, e.g. "ThreatFox had no IOCs for CVE-2024-57726; OTX Akira pulse yielded contextual TTPs only.">
 
-Hunt Results: 🟢 NO EVIDENCE FOUND | 🟡 INCONCLUSIVE | 🔴 EVIDENCE OF COMPROMISE
-Confidence: NN% (High | Medium | Low)
-Time Range Searched: <start date> — <end date>
+[Pick exactly one of the two sections below — *Why this came back clean* for hunts with no hits, *Findings* for hunts with positive hits. Don't emit both.]
+
+Why this came back clean:
+<1-3 sentences explaining the analytical insight — *why* nothing matched. Examples: "Four of five KEV entries target on-prem appliances not represented in this cloud-native environment." or "Hunt scope necessarily pivoted to generic C2 sweeps because ThreatFox had no IOCs seeded for these CVEs.">
 
 Findings:
-- ✓ or ✗ <Finding 1 — what was searched, what was found or not>
-- ✓ or ✗ <Finding 2 with `technical details`>
-- ✓ or ✗ <Finding 3>
+- ✓ or ✗ <What was searched and what was or was not found, with `technical details`>
+- ✓ or ✗ <Next finding>
 
-Timeline:  (omit this whole section if there is no suspicious activity)
+Timeline (only if suspicious activity found; omit the whole section if not):
 - `<timestamp>` <event>
 - `<timestamp>` <event>
 
-MITRE ATT&CK: <canonical tags hunted, e.g. `techniques.t1190.exploit_public_facing_application`>
+MITRE ATT&CK: <Tactics and techniques hunted for, cited by canonical tag: `tactics.ta0002.execution`, `techniques.t1190.exploit_public_facing_application`, etc.>
 
-> <Blockquote for the most critical finding or context>
+Visibility gaps (in order of fixability — closable gaps first, environmental facts last; cap at 4):
+- *<Most-actionable gap>* — <what hunting capability it would unlock; name the specific IOC or TTP it relates to, e.g. "would have caught egress C2 to AWS-hosted QakBot node `50.16.16.211`">
+- <Next gap, same structure>
 
-Visibility Gaps:
-- <Log source or telemetry that was missing>
-- <Time periods with no coverage>
+Next questions (cap at 2; only include if they would actually unblock further work):
+- <Follow-up that would close the most actionable visibility gap or confirm an applicability question>
+- <Follow-up about scope or broader context>
+````
 
-Recommended Next Questions:
-- <Investigative follow-up>
-- <Question about visibility gaps>
-- <Question about broader context>
-```
-
-Keep the report compact — aim for one screen, not a blog post.
+Output rules:
+- The verdict blockquote leads. There is no other blockquote in the report — don't scatter `>` lines across sections.
+- IOCs go in a fenced code block with aligned columns (indicator, family/role, hosting/context, last-seen). One-line summary on the section header. Tables-as-prose ("`162.243.103.246` (Emotet C2, DigitalOcean), `50.16.16.211` (QakBot C2, AWS), …") is harder to scan; use the fenced block.
+- Pick exactly one of *Why this came back clean* OR *Findings* — never both. Clean hunts deserve analytical insight, not an empty findings section.
+- Cap *Visibility gaps* at 4, ordered by fixability. Environmental facts ("we're a cloud-native shop, this CVE targets on-prem appliances") go last — they're context, not action items.
+- Cap *Next questions* at 2, and skip the section if the only follow-ups would be filler.
+- Keep the report compact — aim for one screen, not a blog post.
