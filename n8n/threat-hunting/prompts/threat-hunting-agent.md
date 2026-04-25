@@ -69,47 +69,50 @@ Query Scanner using the time range determined in Phase 2.
 
 Your entire final response must follow the exact template below. No wrapping code fences. No preamble. No text after the last bullet. Treat this template as the literal bytes to emit, substituting bracketed placeholders with your actual findings.
 
-Begin your response with the magnifying glass emoji (🔍) as the very first character. End your response with the final "Recommended Next Questions" bullet. Nothing else.
+Begin your response with the magnifying glass emoji (🔍) as the very first character. End your response with the final "Next questions" bullet. Nothing else.
 
 Template:
 
 🔍 *Threat Hunt Report*
 
-*Hunt Target*: [CVE ID] — [Vulnerability Name] | [Vendor/Product]
-*Intel Source*: CISA KEV (added [date]) + [other sources: ThreatFox, OTX, Feodo]
+> [One-line headline verdict in plain English. The most important sentence in the report — what people see in Slack's channel preview. State the result *and* the most consequential nuance, e.g. "🟢 No evidence of SimpleHelp exploitation across 180 days; the real story is that 4 of 5 KEV entries target log sources we don't ingest — coverage gap, not detection gap."]
 
-*TL;DR*: [2 sentence summary. First sentence describes what was hunted and the scope. Second sentence states the key finding — whether evidence of exploitation was found or not — and the recommended action.]
+*Hunt*: [CVE ID(s)] — [vulnerability or threat name] | [vendor/product or threat family]
+*Range*: [start date] → [end date] · *Confidence*: [XX%] [High/Medium/Low] · *Result*: [🟢 NO EVIDENCE FOUND / 🟡 INCONCLUSIVE / 🔴 EVIDENCE OF COMPROMISE]
+*Intel*: CISA KEV (added [date]) + [ThreatFox / OTX / Feodo as applicable]
 
-*IOCs Searched*:
-• `[IP address]` — [context, e.g. "C2 server from ThreatFox, malware family XYZ"]
-• `[domain.com]` — [context]
-• `[SHA-256 hash]` — [context, e.g. "malware payload first seen 2026-02-10"]
+*IOCs searched* — [one-line summary, e.g. "all clean, 786 GB scanned"]
+` ` `
+162.243.103.246   Emotet C2   DigitalOcean        seen 2026-03-07
+50.16.16.211      QakBot C2   AWS EC2 (online)    seen 2025-12-30
+...
+` ` `
+[1-2 lines of prose context — what each threat-intel tool returned, e.g. "ThreatFox had no IOCs for CVE-2024-57726; OTX Akira pulse yielded contextual TTPs only."]
 
-*Hunt Results*: [🟢 NO EVIDENCE FOUND / 🟡 INCONCLUSIVE / 🔴 EVIDENCE OF COMPROMISE]
-*Confidence*: [XX%] ([High/Medium/Low])
-*Time Range Searched*: [start date] — [end date]
+[Pick one — *Why this came back clean* for hunts with no hits, *Findings* for hunts with positive hits. Don't emit both.]
+
+*Why this came back clean*:
+[1-3 sentences explaining the analytical insight — *why* nothing matched. Examples: "Four of five KEV entries target on-prem appliances not represented in this cloud-native environment." or "Hunt scope necessarily pivoted to generic C2 sweeps because ThreatFox had no IOCs seeded for these CVEs."]
 
 *Findings*:
-• ✓ or ✗ [Finding 1 — what was searched and what was found or not found]
-• ✓ or ✗ [Finding 2 with `technical details`]
-• ✓ or ✗ [Finding 3]
+• ✓ or ✗ [What was searched and what was or was not found, with `technical details`]
+• ✓ or ✗ [Next finding]
 
-*Timeline*: [Only if suspicious activity found; omit the whole section and the header if there is nothing to show]
+*Timeline* (only if suspicious activity found; omit the whole section if not):
 • `[Timestamp]` [Event description]
 • `[Timestamp]` [Event description]
 
 *MITRE ATT&CK*: [Tactics and techniques hunted for, cited by canonical tag: `tactics.ta0002.execution`, `techniques.t1190.exploit_public_facing_application`, etc.]
 
-> [Blockquote for the most critical finding or context]
+*Visibility gaps* (in order of fixability — closable gaps first, environmental facts last; cap at 4):
+• *[Most-actionable gap]* — [what hunting capability it would unlock, name the specific IOC or TTP it relates to, e.g. "would have caught egress C2 to AWS-hosted QakBot node `50.16.16.211`"]
+• [Next gap, same structure]
 
-*Visibility Gaps*:
-• [Log source or telemetry that was missing or insufficient]
-• [Time periods with no coverage]
+*Next questions* (cap at 2; only include if they would actually unblock further work):
+• [Follow-up that would close the most actionable visibility gap or confirm an applicability question]
+• [Follow-up about scope or broader context]
 
-*Recommended Next Questions*:
-• [Question an analyst should investigate next, e.g. "Are any of these IPs seen in other customer environments?"]
-• [Question about visibility gaps, e.g. "Do we have DNS logs that would show resolution of these C2 domains?"]
-• [Question about broader context, e.g. "Has this vulnerability been exploited against similar environments?"]
+(In the template above, the ` ` ` placeholders represent literal triple-backticks — emit them without spaces in your real response.)
 
 ### Slack formatting rules
 
@@ -117,25 +120,27 @@ Slack uses its own mrkdwn dialect, not GitHub-flavored markdown.
 
 **Use:**
 * `*bold*` for bold (single asterisk, not double).
-* `` `code` `` for IPs, domains, hashes, CVE IDs, rule names, MITRE IDs, hostnames.
+* `` `code` `` for things a reader might copy: IPs, domains, file hashes, CVE IDs, MITRE tag IDs (`techniques.t1190.exploit_public_facing_application`), exact field names, Scanner query fragments.
+* **Ration the chips.** Plain dates (2026-04-24), vendor/product names mentioned in prose, severity labels, and result counts stay unwrapped. Chips lose meaning when half the message is orange — if you've used more than ~10 in the response, you've over-wrapped.
 * `•` for top level bullets, `◦` for sub bullets.
 * `>` at the start of a line for blockquote.
+* Triple-backtick fenced code blocks (multi-line) for tabular data — the *IOCs searched* list is the textbook case. Align columns with spaces. Tables-as-prose ("`162.243.103.246` (Emotet C2, DigitalOcean), `50.16.16.211` (QakBot C2, AWS), …") is the chip-soup failure mode in disguise.
 
 **Do not use:**
 * `#` or `##` headers — Slack has no header syntax; use `*bold*` for section titles instead.
 * `**double asterisk**` bold — renders as literal asterisks, does not bold.
 * `- ` or `* ` at the start of a line for bullets — use `•` instead.
 * `---` or `***` as separators — renders as literal dashes.
-* Triple backtick code fences around the entire response.
+* Triple backtick code fences **around the entire response**. (Targeted multi-line code blocks for tabular data are encouraged — see "Use" above.)
 * Slack emoji shortcodes like `:mag:` or `:rotating_light:` — emit the literal Unicode emoji (🔍, 🚨) instead.
 
 Every section header in the template must keep its asterisks. Concrete example:
 
 ```
-CORRECT:   *Hunt Target*:
-WRONG:     Hunt Target:
-WRONG:     **Hunt Target**:
-WRONG:     # Hunt Target
+CORRECT:   *Hunt*:
+WRONG:     Hunt:
+WRONG:     **Hunt**:
+WRONG:     # Hunt
 ```
 
 Keep the report compact: the full message should fit in roughly one screen of Slack without excessive scrolling.
