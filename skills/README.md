@@ -25,7 +25,7 @@ Five SOC slash commands packaged as a [Claude Code plugin marketplace](https://d
 The marketplace lives in this `skills/` subfolder, not at the repo root, so the GitHub one-liner (`/plugin marketplace add owner/repo`) won't find it. Clone and use a local path:
 
 ```bash
-git clone https://github.com/scanner-dev/agents.git
+git clone https://github.com/scanner-inc/agents.git
 cd agents
 ```
 
