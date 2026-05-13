@@ -60,7 +60,7 @@ To enable:
 3. In the same node:
    * Set **Project** to your Jira project key (replace `REPLACE_WITH_JIRA_PROJECT_KEY`).
    * Confirm **Issue Type** (default `Task`).
-   * Confirm the **Additional Fields** mappings — Description binds to `{{ $json.jira_description_wiki }}`, Priority to `{{ $json.jira_priority }}`, Labels to `{{ $json.jira_labels }}`. The priority value the agent emits is `High` (compromise) or `Medium` (inconclusive); make sure your Jira project has those priority names (or remap in the node).
+   * Confirm the **Additional Fields** mappings — Description binds to `{{ $json.jira_description_wiki }}`, Labels to `{{ $json.jira_labels }}`. Priority is **not mapped by default** because many Jira projects (especially team-managed ones) disable the priority field entirely, and sending a value to such a project returns 400 "invalid priority". To check whether yours supports it, open any existing issue in your Jira project — if the Details panel has a Priority row, your project has priority enabled. If so and you want the agent's result-driven mapping (`🔴 → High, 🟡 → Medium`), add a Priority entry under Additional Fields bound to `{{ $json.jira_priority }}`.
 4. Activate the workflow. The next 🔴 or 🟡 hunt result will produce both a Slack post and a Jira ticket.
 
 If your Jira instance is self-hosted (Server / Data Center) rather than Cloud, swap the credential to "Jira Server API" and adjust the node accordingly.

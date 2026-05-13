@@ -144,7 +144,7 @@ The JSON object must be a single line — no embedded literal newlines. Standard
 
 **Summary**: one short line. Lead with the classification emoji and label, then the most consequential phrase. Example: `🟡 SUSPICIOUS — AdministratorAccess attached outside business hours by jsmith`.
 
-**Labels**: always include `scanner`, `alert-triage`, `severity:<value lowercased>`, `classification:<value lowercased>`. Optionally append MITRE technique tags from the alert (e.g., `techniques.t1098.account_manipulation`).
+**Labels**: always include `scanner`, `alert-triage`, `severity:<value lowercased>`, `classification:<value lowercased>`. Optionally append MITRE technique tags from the alert (e.g., `techniques.t1098.account_manipulation`). The downstream Code node automatically sanitizes labels to Jira's allowed character set (letters, digits, hyphens, underscores, colons) by replacing dots and other disallowed characters with hyphens, so you can emit MITRE tags in their natural dotted form.
 
 **Description (Jira wiki markup)** — same skeleton as the Slack report, converted to Jira wiki syntax. Mapping from Slack mrkdwn:
 
