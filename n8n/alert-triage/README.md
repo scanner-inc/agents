@@ -5,19 +5,19 @@ Autonomous alert triage agent. Scanner detection fires → Scanner posts to this
 ## Architecture
 
 ```
-┌─────────────┐       ┌───────────┐      ┌─────────────────┐      ┌───────┐
-│  Scanner    │──POST─▶  Webhook  │─────▶│  Alert Triage   │─────▶│ Slack │
-│  event sink │       │  (header  │      │     Agent       │      │ post  │
-│             │       │   auth)   │      │                 │      │       │
-└─────────────┘       └───────────┘      └────────┬────────┘      └───────┘
-                                                  │
-                                  ┌───────────────┼───────────────┐
-                                  │                               │
-                        ┌─────────▼────────┐             ┌────────▼────────┐
-                        │   Anthropic      │             │   MCP Client    │
-                        │   Chat Model     │             │   (Scanner MCP) │
-                        │  (Opus 4.7)      │             │                 │
-                        └──────────────────┘             └─────────────────┘
+┌─────────────┐    ┌───────────┐    ┌─────────────────┐    ┌──────────────┐    ┌───────┐
+│  Scanner    │───▶│  Webhook  │───▶│  Alert Triage   │───▶│ Split Output │─┬─▶│ Slack │
+│  event sink │    │  (header  │    │     Agent       │    │    (Code)    │ │  │ post  │
+│             │    │   auth)   │    │                 │    │              │ │  └───────┘
+└─────────────┘    └───────────┘    └────────┬────────┘    └──────────────┘ │
+                                             │                              ▼
+                              ┌──────────────┴──────────────┐        ┌──────────────┐    ┌──────────────────┐
+                              │                             │        │ Create Jira? │───▶│  Create Jira     │
+                    ┌─────────▼────────┐           ┌────────▼─────┐  │     (If)     │    │     Issue        │
+                    │   Anthropic      │           │  Scanner MCP │  └──────────────┘    │  (disabled by    │
+                    │   Chat Model     │           │              │                      │    default)      │
+                    │  (Opus 4.7)      │           │              │                      └──────────────────┘
+                    └──────────────────┘           └──────────────┘
 ```
 
 The AI Agent node runs an agent loop: it reasons, decides to call Scanner MCP tools (`get_scanner_context`, `execute_query`, `fetch_cached_results`), processes results, and produces a final Slack formatted finding. A small Code node splits the agent output into the Slack portion and an optional Jira block; the downstream Slack node posts the finding to the configured channel, and an If node routes the Jira branch when the agent decided a ticket is warranted.
