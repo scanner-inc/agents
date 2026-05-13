@@ -32,6 +32,10 @@ A 5-phase hunt:
 4. **Correlation and assessment**: cross-reference findings across log sources, build a timeline, map to MITRE ATT&CK, identify visibility gaps.
 5. **Report**: post a structured finding to Slack with hunt target, IOCs searched, results (evidence found / inconclusive / no evidence), timeline, MITRE tags, visibility gaps, and recommended next questions for the analyst.
 
+## Optional: Jira ticket creation
+
+Slack delivery is required. **Jira is optional and disabled by default.** When enabled, the agent will create a Jira ticket only when the hunt result is `🔴 EVIDENCE OF COMPROMISE` or `🟡 INCONCLUSIVE`. `🟢 NO EVIDENCE FOUND` runs stay Slack-only, so on most weeks the Jira branch is silent. See `setup.md` → "Optional: enable Jira ticket creation" for the credential and project key wiring.
+
 ## Why run it
 
 Known-bad IOCs land in public feeds daily. A SOC without a threat hunting program typically has no systematic way to check for them across its log history. This agent runs while the team sleeps, checks every IOC in a fresh batch against Scanner's full log history, and only posts when it finds something worth investigating (or when a clean run is notable — e.g., every run was clean for a month, or a specific high-priority CVE came out and the sweep was clean).

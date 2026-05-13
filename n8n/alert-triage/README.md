@@ -20,7 +20,11 @@ Autonomous alert triage agent. Scanner detection fires → Scanner posts to this
                         └──────────────────┘             └─────────────────┘
 ```
 
-The AI Agent node runs an agent loop: it reasons, decides to call Scanner MCP tools (`get_scanner_context`, `execute_query`, `fetch_cached_results`), processes results, and produces a final Slack formatted finding. The downstream Slack node posts the finding to the configured channel.
+The AI Agent node runs an agent loop: it reasons, decides to call Scanner MCP tools (`get_scanner_context`, `execute_query`, `fetch_cached_results`), processes results, and produces a final Slack formatted finding. A small Code node splits the agent output into the Slack portion and an optional Jira block; the downstream Slack node posts the finding to the configured channel, and an If node routes the Jira branch when the agent decided a ticket is warranted.
+
+## Optional: Jira ticket creation
+
+Slack delivery is required. **Jira is optional and disabled by default.** When enabled, the agent will create a Jira ticket only when classification is `SUSPICIOUS` or `MALICIOUS` AND alert severity is `Medium`, `High`, or `Critical`. BENIGN alerts and Low/Info severity alerts stay Slack-only. See `setup.md` → "Optional: enable Jira ticket creation" for the credential and project key wiring.
 
 ## Why this shape
 
@@ -35,7 +39,10 @@ The AI Agent node runs an agent loop: it reasons, decides to call Scanner MCP to
 2. **Alert Triage Agent** (`@n8n/n8n-nodes-langchain.agent`): core agent. Prompt: "Triage this detection alert:\n\n{{ $json }}". System prompt lives in `prompts/triage-agent.md`. Retry On Fail enabled (3 tries, 5s wait) to survive transient Anthropic overload.
 3. **Anthropic Chat Model** (`@n8n/n8n-nodes-langchain.lmChatAnthropic`): sub node, connected to the Agent via `ai_languageModel`. Model: `claude-opus-4-7` (swap to `claude-sonnet-4-7` if overload is frequent).
 4. **Scanner MCP** (`@n8n/n8n-nodes-langchain.mcpClientTool`): sub node, connected to the Agent via `ai_tool`. Points at your Scanner MCP URL with bearer auth. Scanner MCP uses Streamable HTTP transport (not SSE).
-5. **Send a message** (`n8n-nodes-base.slack`): posts the agent's final output to the configured channel.
+5. **Split Output** (`n8n-nodes-base.code`): parses the agent's response on the `===JIRA===` sentinel into `slack_text` (clean Slack body) plus Jira ticket fields. Falls back to Slack-only on parse failure.
+6. **Send a message** (`n8n-nodes-base.slack`): posts the Slack portion of the agent's output to the configured channel.
+7. **Create Jira?** (`n8n-nodes-base.if`): routes the Jira branch when the agent set `create_jira: true`.
+8. **Create Jira Issue** (`n8n-nodes-base.jira`): creates the Jira ticket. **Disabled by default** — see `setup.md` to enable.
 
 ## Setup
 

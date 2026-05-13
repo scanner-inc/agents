@@ -43,7 +43,27 @@ Create these credentials in n8n's **Credentials** UI. Names must match what the 
    * **OTX Pulse Search**: credential `OTX Header Auth`.
    * **Feodo Tracker**: no auth; public JSON endpoint.
    * **Threat Hunt Agent**: system message field contains the full body of `prompts/threat-hunting-agent.md`. Paste it if the import did not populate it.
+   * **Split Output**: Code node that parses the agent's final response into a Slack portion and an optional Jira block. Leave the JavaScript as-is.
    * **Send a message**: channel ID is your threat hunting Slack channel.
+   * **Create Jira?** and **Create Jira Issue**: leave alone unless you want Jira ticket creation — see the next section.
+
+## Optional: enable Jira ticket creation
+
+Slack delivery is the default. The **Create Jira Issue** node ships disabled, so out of the box the workflow only posts to Slack. Skip this section if you do not use Jira.
+
+When enabled, the agent will request a Jira ticket only when the hunt result is **🔴 EVIDENCE OF COMPROMISE** or **🟡 INCONCLUSIVE**. **🟢 NO EVIDENCE FOUND** runs stay Slack-only. This means on most clean weeks the Jira branch is silent; tickets only appear when there is a real lead to chase.
+
+To enable:
+
+1. Create a **Jira SW Cloud account** credential (type: Jira Software Cloud API) in the n8n Credentials UI. Domain, email, API token. n8n's Jira docs: <https://docs.n8n.io/integrations/builtin/credentials/jira/>.
+2. Open the **Create Jira Issue** node → right-click → **Activate** (or untick "Disable").
+3. In the same node:
+   * Set **Project** to your Jira project key (replace `REPLACE_WITH_JIRA_PROJECT_KEY`).
+   * Confirm **Issue Type** (default `Task`).
+   * Confirm the **Additional Fields** mappings — Description binds to `{{ $json.jira_description_wiki }}`, Priority to `{{ $json.jira_priority }}`, Labels to `{{ $json.jira_labels }}`. The priority value the agent emits is `High` (compromise) or `Medium` (inconclusive); make sure your Jira project has those priority names (or remap in the node).
+4. Activate the workflow. The next 🔴 or 🟡 hunt result will produce both a Slack post and a Jira ticket.
+
+If your Jira instance is self-hosted (Server / Data Center) rather than Cloud, swap the credential to "Jira Server API" and adjust the node accordingly.
 
 ## Test
 

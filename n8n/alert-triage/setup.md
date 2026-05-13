@@ -46,7 +46,27 @@ Before importing `workflow.json`, create these credentials in n8n's **Credential
    * **ThreatFox IOC Lookup**: credential is "Threatfox Abuse.ch Header Credential".
    * **OTX IOC Lookup**: credential is "OTX Header Auth".
    * **Alert Triage Agent**: system message field contains the full body of `prompts/triage-agent.md`. Import copies it, but verify it is not truncated.
+   * **Split Output**: Code node that parses the agent's final response into a Slack portion and an optional Jira block. Leave the JavaScript as-is.
    * **Send a message**: channel ID is set to your target Slack channel (replace the placeholder).
+   * **Create Jira?** and **Create Jira Issue**: leave alone unless you want Jira ticket creation — see the next section.
+
+## Optional: enable Jira ticket creation
+
+Slack delivery is the default. The **Create Jira Issue** node ships disabled, so out of the box the workflow only posts to Slack. Skip this section if you do not use Jira.
+
+When enabled, the agent will request a Jira ticket only when **classification is SUSPICIOUS or MALICIOUS** AND **alert severity is Medium, High, or Critical**. BENIGN alerts, and Low/Info severity alerts of any classification, stay Slack-only.
+
+To enable:
+
+1. Create a **Jira SW Cloud account** credential (type: Jira Software Cloud API) in the n8n Credentials UI. Domain, email, API token. n8n's Jira docs walk through generating the token: <https://docs.n8n.io/integrations/builtin/credentials/jira/>.
+2. Open the **Create Jira Issue** node → right-click → **Activate** (or untick "Disable").
+3. In the same node:
+   * Set **Project** to your Jira project key (replace `REPLACE_WITH_JIRA_PROJECT_KEY`).
+   * Confirm **Issue Type** (default `Task`; change to `Bug`, `Incident`, etc. if your project requires).
+   * Confirm the **Additional Fields** mappings — Description binds to `{{ $json.jira_description_wiki }}`, Priority to `{{ $json.jira_priority }}`, Labels to `{{ $json.jira_labels }}`. The priority value the agent emits is one of `Highest`, `High`, `Medium`; make sure your Jira project has those priority names (or remap in the node).
+4. Activate the workflow. The next SUSPICIOUS-or-MALICIOUS alert at Medium+ severity will produce both a Slack post and a Jira ticket.
+
+If your Jira instance is self-hosted (Server / Data Center) rather than Cloud, swap the credential to "Jira Server API" and adjust the node accordingly.
 
 ## Test locally
 
