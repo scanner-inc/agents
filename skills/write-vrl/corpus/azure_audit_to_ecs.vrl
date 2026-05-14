@@ -1,0 +1,33 @@
+# Cloud provider specific fields
+.@ecs.cloud.provider = "azure"
+.@ecs.cloud.region = .location
+.@ecs.cloud.account.id = split(.resourceId, "/")[2] ?? null
+.@ecs.cloud.service.name = .properties.resourceProvider
+
+# Event specific fields
+.@ecs.event.action = .operationName
+.@ecs.event.outcome = downcase(.resultType) ?? null
+.@ecs.event.category = downcase(.category) ?? null
+.@ecs.event.id = .correlationId
+
+# User/Actor fields
+.@ecs.user.id = .identity.authorization.evidence.principalId
+if !is_nullish(.identity.claims."http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress") {
+    .@ecs.user.email = .identity.claims."http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
+}
+
+# Source fields (caller information)
+.@ecs.source.ip = .callerIpAddress
+
+# Resource specific fields
+.@ecs.cloud.resource.id = .resourceId
+.@ecs.cloud.resource.name = .properties.resource
+.@ecs.cloud.resource.type = .properties.resourceType
+.@ecs.cloud.resource.group = .properties.resourceGroup
+
+# Additional metadata
+.@ecs.log.level = downcase(.level) ?? null
+.@ecs.event.code = .properties.statusCode
+
+# Return the top-level object
+.

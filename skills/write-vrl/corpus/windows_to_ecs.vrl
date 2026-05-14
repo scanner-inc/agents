@@ -1,0 +1,14 @@
+# Event specific fields
+.@ecs.event.id = .Event.System.EventID
+
+# Process fields
+.@ecs.process.executable = .Event.EventData.Data.ProcessName
+
+# User fields
+.@ecs.user.id = .Event.EventData.Data.SubjectUserName
+
+# Source fields
+.@ecs.source.ip = .Event.EventData.Data.IpAddress
+
+# Return the top-level object
+.

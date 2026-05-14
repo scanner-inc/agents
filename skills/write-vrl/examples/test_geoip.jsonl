@@ -1,0 +1,5 @@
+{"cidr":"8.8.8.0/24","country_code":"US","country":"United States","continent_code":"NA","continent":"North America","asn":"AS15169","as_name":"Google LLC"}
+{"cidr":"1.1.1.0/24","country_code":"AU","country":"Australia","continent_code":"OC","continent":"Oceania","asn":"AS13335","as_name":"Cloudflare, Inc."}
+{"cidr":"9.9.9.0/24","country_code":"CH","country":"Switzerland","continent_code":"EU","continent":"Europe","asn":"AS19281","as_name":"Quad9"}
+{"cidr":"208.67.222.0/24","country_code":"US","country":"United States","continent_code":"NA","continent":"North America","asn":"AS36692","as_name":"OpenDNS, LLC"}
+{"cidr":"195.91.0.0/16","country_code":"RU","country":"Russia","continent_code":"EU","continent":"Europe","asn":"AS3216","as_name":"Sovam Teleport"}

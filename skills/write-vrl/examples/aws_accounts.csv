@@ -1,0 +1,7 @@
+account_id,account_alias,environment,owner_team
+111111111111,scnr-prod-usw2,production,platform
+222222222222,scnr-prod-use1,production,platform
+333333333333,scnr-staging,staging,platform
+444444444444,scnr-dev,development,platform
+555555555555,scnr-security,production,security
+666666666666,scnr-sandbox,development,research

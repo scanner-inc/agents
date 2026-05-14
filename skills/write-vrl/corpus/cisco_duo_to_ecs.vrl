@@ -1,0 +1,17 @@
+# Event specific fields
+.@ecs.event.action = .event_type
+.@ecs.event.outcome = .result
+
+# User fields
+.@ecs.user.email = .email
+if !is_nullish(.user.name) {
+    .@ecs.user.name = .user.name
+} else if !is_nullish(.username) {
+    .@ecs.user.name = .username
+}
+
+# Source fields
+.@ecs.source.ip = .auth_device.ip || .access_device.ip
+
+# Return the top-level object
+.

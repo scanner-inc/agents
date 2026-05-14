@@ -1,0 +1,19 @@
+# Event specific fields
+.@ecs.event.action = .events.name
+.@ecs.event.category = .events.type
+
+# Service fields
+.@ecs.service.name = .id.applicationName
+
+# User fields
+.@ecs.user.email = .actor.email
+.@ecs.user.id = .actor.profileId
+if !is_nullish(.events.parameters.ROLE_NAME) {
+    .@ecs.user.roles = [.events.parameters.ROLE_NAME]
+}
+
+# Source fields
+.@ecs.source.ip = .ipAddress
+
+# Return the top-level object
+.

@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "scanner-soc-skills",
-      "description": "Five SOC skills: triage-alert (lookup an alert by id and investigate), threat-hunt (sweep historical logs for fresh threat-intel IOCs), posture-report (daily Scanner posture report), investigate (free-form Scanner Q&A using a summarize -> plan -> execute pattern), and lookup-ioc (one-shot IOC reputation across ThreatFox, OTX, and Feodo Tracker). Requires Scanner MCP configured in Claude Code; the skills also use SCANNER_API_URL / SCANNER_API_KEY for the Detection Rules REST API and OTX_API_KEY / ABUSECH_AUTH_KEY for threat intel.",
+      "description": "Six SOC skills: triage-alert (lookup an alert by id and investigate), threat-hunt (sweep historical logs for fresh threat-intel IOCs), posture-report (daily Scanner posture report), investigate (free-form Scanner Q&A using a summarize -> plan -> execute pattern), lookup-ioc (one-shot IOC reputation across ThreatFox, OTX, and Feodo Tracker), and write-vrl (author and test a VRL transformation program for a Scanner ingestion step). Requires Scanner MCP configured in Claude Code; the skills also use SCANNER_API_URL / SCANNER_API_KEY for the Detection Rules REST API and OTX_API_KEY / ABUSECH_AUTH_KEY for threat intel. write-vrl additionally needs a local `vector` binary.",
       "source": "./",
       "strict": false,
       "skills": [
@@ -19,7 +19,8 @@
         "./threat-hunt",
         "./posture-report",
         "./investigate",
-        "./lookup-ioc"
+        "./lookup-ioc",
+        "./write-vrl"
       ]
     }
   ]

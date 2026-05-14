@@ -1,0 +1,60 @@
+# AWS ECS container stdout/stderr logs -> ECS
+#
+# Worked example: an application running in AWS ECS Fargate/EC2 writes JSON
+# logs to stdout, picked up by FireLens/CloudWatch/etc. The shipped event has
+# top-level container_*, ecs_*, and dot-named log.* keys (literal dots, not
+# nested objects), plus a Scanner ingest envelope under @scnr.* / %ingest.* /
+# @index* which we leave alone.
+#
+# Useful patterns to lift:
+#   - parse_regex on an AWS ARN to extract region/account/resource id
+#   - quoted-path access (."log.level") for flat keys with literal dots
+#   - constant cloud.provider/service.name when the source implies them
+
+# Cloud context — constant for this source
+.@ecs.cloud.provider = "aws"
+.@ecs.cloud.service.name = "ecs"
+
+# Parse region, account, and task UUID from the task ARN:
+#   arn:aws:ecs:<region>:<account>:task/<cluster>/<task-uuid>
+if !is_nullish(.ecs_task_arn) {
+    arn_str = to_string(.ecs_task_arn) ?? ""
+    parsed_arn, _err = parse_regex(arn_str, r'^arn:aws:ecs:(?P<region>[^:]+):(?P<account>[^:]+):task/[^/]+/(?P<task_id>.+)$')
+    if parsed_arn != null {
+        .@ecs.cloud.region = parsed_arn.region
+        .@ecs.cloud.account.id = parsed_arn.account
+        .@ecs.orchestrator.resource.id = parsed_arn.task_id
+    }
+}
+
+# Orchestrator (ECS-the-orchestrator, not ECS-the-schema)
+.@ecs.orchestrator.type = "ecs"
+if !is_nullish(.ecs_cluster) {
+    .@ecs.orchestrator.cluster.name = .ecs_cluster
+}
+if !is_nullish(.ecs_task_definition) {
+    .@ecs.orchestrator.resource.name = .ecs_task_definition
+    .@ecs.orchestrator.resource.type = "task"
+}
+
+# Container fields
+if !is_nullish(.container_id) {
+    .@ecs.container.id = .container_id
+}
+if !is_nullish(.container_name) {
+    .@ecs.container.name = .container_name
+}
+
+# Log line metadata — keys are flat with literal dots, use the quoted-path form
+if !is_nullish(."log.level") {
+    .@ecs.log.level = ."log.level"
+}
+if !is_nullish(."log.target") {
+    .@ecs.log.logger = ."log.target"
+}
+if !is_nullish(."log.fields.message") {
+    .@ecs.message = ."log.fields.message"
+}
+
+# Return the top-level object
+.

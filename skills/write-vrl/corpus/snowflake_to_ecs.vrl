@@ -1,0 +1,22 @@
+# Event specific fields
+.@ecs.event.action = .ACTION
+if is_boolean(.IS_SUCCESS) && to_bool!(.IS_SUCCESS) {
+    .@ecs.event.outcome = "success"
+} else {
+    .@ecs.event.outcome = "success"
+}
+
+# Source fields
+.@ecs.source.ip = .CLIENT_IP
+
+# User fields
+.@ecs.user.name = .USER_NAME
+
+# Error fields
+if !is_nullish(.ERROR_MESSAGE) {
+    .@ecs.error.message = .ERROR_MESSAGE
+    .@ecs.error.code = .ERROR_CODE
+}
+
+# Return the top-level object
+.

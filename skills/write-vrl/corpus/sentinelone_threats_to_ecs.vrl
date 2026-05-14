@@ -1,0 +1,65 @@
+# SentinelOne Threats to ECS normalization
+#
+# Minimal high-confidence mappings only.
+# Threats contain security detection events with detailed threat info.
+
+# Service identifier
+.@ecs.service.name = "sentinelone"
+
+# Organization (SentinelOne Account)
+if !is_nullish(.agentDetectionInfo.accountId) {
+    .@ecs.organization.id = .agentDetectionInfo.accountId
+}
+if !is_nullish(.agentDetectionInfo.accountName) {
+    .@ecs.organization.name = .agentDetectionInfo.accountName
+}
+
+# Host fields from agentRealtimeInfo
+if !is_nullish(.agentRealtimeInfo.agentId) {
+    .@ecs.host.id = .agentRealtimeInfo.agentId
+}
+if !is_nullish(.agentRealtimeInfo.agentComputerName) {
+    .@ecs.host.name = .agentRealtimeInfo.agentComputerName
+}
+if !is_nullish(.agentRealtimeInfo.agentOsType) {
+    .@ecs.host.os.type = .agentRealtimeInfo.agentOsType
+}
+if !is_nullish(.agentRealtimeInfo.agentOsName) {
+    .@ecs.host.os.name = .agentRealtimeInfo.agentOsName
+}
+if !is_nullish(.agentRealtimeInfo.agentOsRevision) {
+    .@ecs.host.os.version = .agentRealtimeInfo.agentOsRevision
+}
+if !is_nullish(.agentRealtimeInfo.agentMachineType) {
+    .@ecs.host.type = .agentRealtimeInfo.agentMachineType
+}
+
+# File fields from threatInfo
+if !is_nullish(.threatInfo.filePath) {
+    .@ecs.file.path = .threatInfo.filePath
+}
+if !is_nullish(.threatInfo.sha1) {
+    .@ecs.file.hash.sha1 = .threatInfo.sha1
+}
+if !is_nullish(.threatInfo.sha256) {
+    .@ecs.file.hash.sha256 = .threatInfo.sha256
+}
+if !is_nullish(.threatInfo.md5) {
+    .@ecs.file.hash.md5 = .threatInfo.md5
+}
+
+# Process fields from threatInfo
+if !is_nullish(.threatInfo.originatorProcess) {
+    .@ecs.process.name = .threatInfo.originatorProcess
+}
+if !is_nullish(.threatInfo.processUser) {
+    .@ecs.process.user.name = .threatInfo.processUser
+}
+
+# User (logged-in user on the endpoint)
+if !is_nullish(.agentDetectionInfo.agentLastLoggedInUserName) {
+    .@ecs.user.name = .agentDetectionInfo.agentLastLoggedInUserName
+}
+
+# Return the top-level object
+.

@@ -1,0 +1,22 @@
+# Event specific fields
+.@ecs.event.action = .action
+
+# User fields
+.@ecs.user.email = .actor.user.email
+.@ecs.user.id = .actor.user.id
+.@ecs.user.type = .actor.type
+.@ecs.user.group.name = .actor.user.team
+
+# File fields
+if !is_nullish(.entity.file) {
+    .@ecs.file.mime_type = .entity.file.filetype
+    .@ecs.file.name = .entity.file.name
+    .@ecs.file.id = .entity.file.id
+}
+
+# Source fields
+.@ecs.source.ip = .context.ip_address
+.@ecs.user_agent = .context.ua
+
+# Return the top-level object
+.

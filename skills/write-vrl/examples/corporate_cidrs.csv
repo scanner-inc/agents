@@ -1,0 +1,8 @@
+cidr,classification
+10.0.0.0/24,corporate
+10.0.10.0/24,corporate-vpn
+10.0.20.0/24,corporate-vpn
+172.20.0.0/16,corporate
+192.168.50.0/24,corporate
+198.51.100.0/24,datacenter
+2001:db8::/32,corporate

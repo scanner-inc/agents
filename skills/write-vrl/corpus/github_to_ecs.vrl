@@ -1,0 +1,35 @@
+# Event specific fields
+.@ecs.event.action = .action
+
+if !is_nullish(.conclusion) {
+  .@ecs.event.outcome = .conclusion
+}
+
+if !is_nullish(.request_id) {
+  .@ecs.event.id = .request_id
+}
+
+# Actor/User fields
+if !is_nullish(.actor) {
+  .@ecs.user.name = .actor
+}
+if !is_nullish(.actor_id) {
+    .@ecs.user.id = .actor_id
+}
+
+# User agent
+.@ecs.user_agent = .user_agent
+
+# Business entity (for enterprise)
+if !is_nullish(.org_id) {
+    .@ecs.organization.name = .org
+    .@ecs.organization.id = .org_id
+}
+
+# HTTP request details
+if !is_nullish(.request_id) {
+    .@ecs.http.request.id = .request_id
+}
+
+# Return the top-level object
+.

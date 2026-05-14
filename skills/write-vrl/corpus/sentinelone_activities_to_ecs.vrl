@@ -1,0 +1,45 @@
+# SentinelOne Activities to ECS normalization
+#
+# Minimal high-confidence mappings only.
+# Activities include admin operations, policy changes, device events, etc.
+
+# Service identifier
+.@ecs.service.name = "sentinelone"
+
+# Organization (SentinelOne Account)
+if !is_nullish(.accountId) {
+    .@ecs.organization.id = .accountId
+}
+if !is_nullish(.accountName) {
+    .@ecs.organization.name = .accountName
+}
+
+# Message from primary description
+if !is_nullish(.primaryDescription) {
+    .@ecs.message = .primaryDescription
+}
+
+# Host fields (when agent info is present)
+if !is_nullish(.agentId) {
+    .@ecs.host.id = .agentId
+}
+if !is_nullish(.data.computerName) {
+    .@ecs.host.name = .data.computerName
+}
+if !is_nullish(.osFamily) {
+    .@ecs.host.os.family = .osFamily
+}
+if !is_nullish(.data.osType) {
+    .@ecs.host.os.type = .data.osType
+}
+
+# User fields (when present)
+if !is_nullish(.userId) {
+    .@ecs.user.id = .userId
+}
+if !is_nullish(.data.lastLoggedInUserName) {
+    .@ecs.user.name = .data.lastLoggedInUserName
+}
+
+# Return the top-level object
+.

@@ -1,0 +1,19 @@
+# Event specific fields
+.@ecs.event.action = .Operation
+.@ecs.event.outcome = .ResultStatus
+.@ecs.event.category = .Category
+.@ecs.event.id = .CorrelationID
+
+# Service fields
+.@ecs.service.name = .Workload
+
+# User fields
+.@ecs.user.id = .UserId
+.@ecs.user.email = .UserId
+
+# Source fields
+.@ecs.source.ip = .ClientIP
+.@ecs.user_agent = .UserAgent
+
+# Return the top-level object
+.

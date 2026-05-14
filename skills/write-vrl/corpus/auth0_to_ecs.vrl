@@ -1,0 +1,43 @@
+# If logs come in over custom HTTP sink / custom webhook + collect, they have the format {"data": {content}, "log_id": "id_of_log"}
+#
+# If logs come in via aws eventbridge, they have the format {"detail": {"data": {content}, "log_id": "id_of_log"}, ...}
+#
+# This VRL script is intended to extract @ecs fields in both cases.
+#
+# Note that the `||` operator in VRL only considers `null` and `false` to be falsey. (all other values `""`, `0`, etc. short-circuit)
+
+# Event specific fields:
+action = .data.type || .detail.data.type
+if !is_nullish(action) {
+  .@ecs.event.action = action
+}
+
+# User fields:
+id = .data.user_id || .detail.data.user_id
+if !is_nullish(id) {
+  .@ecs.user.id = id
+}
+
+user_name = .data.user_name || .detail.data.user_name
+if !is_nullish(user_name) {
+  .@ecs.user.name = user_name
+}
+
+email = .data.details.request.auth.user.email || .detail.data.details.request.auth.user.email
+if !is_nullish(email) {
+  .@ecs.user.email = email
+}
+
+# Source fields:
+ip = .data.ip || .detail.data.ip
+if !is_nullish(ip) {
+  .@ecs.source.ip = ip
+}
+
+user_agent = .data.user_agent || .detail.data.user_agent
+if !is_nullish(user_agent) {
+  .@ecs.user_agent = user_agent
+}
+
+# Return the top-level object
+.

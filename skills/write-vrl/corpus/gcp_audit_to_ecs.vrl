@@ -1,0 +1,31 @@
+# Cloud provider specific fields
+.@ecs.cloud.provider = "gcp"
+.@ecs.cloud.region = .resource.labels.zone
+.@ecs.cloud.account.id = .resource.labels.project_id
+.@ecs.cloud.service.name = .protoPayload.serviceName
+
+# Event specific fields
+.@ecs.event.action = .protoPayload.methodName
+.@ecs.event.outcome = downcase(.protoPayload.status.message) ?? null
+
+# User/Actor fields
+if !is_nullish(.protoPayload.authenticationInfo.principalEmail) {
+    .@ecs.user.email = .protoPayload.authenticationInfo.principalEmail
+    .@ecs.user.id = .protoPayload.authenticationInfo.principalSubject
+}
+
+# Source fields (caller information)
+if !is_nullish(.protoPayload.requestMetadata.callerIp) {
+    .@ecs.source.ip = .protoPayload.requestMetadata.callerIp
+    .@ecs.user_agent.original = .protoPayload.requestMetadata.callerSuppliedUserAgent
+}
+
+# Additional metadata
+.@ecs.log.level = downcase(.severity) ?? null
+if !is_nullish(.trace) {
+    .@ecs.trace.id = .trace
+    .@ecs.span.id = .spanId
+}
+
+# Return the top-level object
+.

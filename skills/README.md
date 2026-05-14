@@ -1,6 +1,6 @@
 # Claude Code skills
 
-Five SOC slash commands packaged as a [Claude Code plugin marketplace](https://docs.claude.com/en/docs/claude-code/plugins). Drop into `claude`, type `/triage-alert <id>` (or one of the others), and the skill drives Scanner MCP for you.
+Six SOC slash commands packaged as a [Claude Code plugin marketplace](https://docs.claude.com/en/docs/claude-code/plugins). Drop into `claude`, type `/triage-alert <id>` (or one of the others), and the skill drives Scanner MCP for you.
 
 ## Skills
 
@@ -11,14 +11,16 @@ Five SOC slash commands packaged as a [Claude Code plugin marketplace](https://d
 | **[`/posture-report`](./posture-report)** | Daily Scanner posture report — environment, log volume, alert activity (actionable / correlation / uncategorized), coverage gaps, 2–5 recommended next moves. |
 | **[`/investigate <question>`](./investigate)** | Free-form Scanner Q&A. Restates the question, drafts a 3–6 bullet plan grounded in your actual schema, then executes via Scanner MCP and returns a structured finding. |
 | **[`/lookup-ioc <indicator>`](./lookup-ioc)** | One-shot IOC reputation across ThreatFox, OTX, and (for IPv4) Feodo Tracker. Returns a single merged threat-intel report. |
+| **[`/write-vrl`](./write-vrl)** | Author and test a VRL transformation step for Scanner. Drafts a program from a sample log + objective (normalize to ECS, drop noisy events, fan out, parse, enrich), runs it through `vector vrl` against the sample, iterates until output matches, and hands back code ready to paste into the Scanner UI. |
 
 ## Requirements
 
 - **Claude Code** with plugin marketplaces enabled (`/plugin` should open a UI).
-- **Scanner MCP** configured in Claude Code — every skill calls `get_scanner_context` and `execute_query`. See [Scanner MCP docs](https://scanner.dev/docs).
+- **Scanner MCP** configured in Claude Code — every Scanner-backed skill calls `get_scanner_context` and `execute_query`. See [Scanner MCP docs](https://scanner.dev/docs). `/write-vrl` does not need Scanner MCP.
 - **Environment variables** (set in your shell or `~/.claude/settings.json`):
-  - `SCANNER_API_URL`, `SCANNER_API_KEY`, `SCANNER_TENANT_ID` — needed by `/posture-report` and any `/investigate` question that hits the Detection Rules REST API. Skip if you only run `/triage-alert`, `/threat-hunt`, and `/lookup-ioc`.
+  - `SCANNER_API_URL`, `SCANNER_API_KEY`, `SCANNER_TENANT_ID` — needed by `/posture-report` and any `/investigate` question that hits the Detection Rules REST API. Skip if you only run `/triage-alert`, `/threat-hunt`, `/lookup-ioc`, and `/write-vrl`.
   - `OTX_API_KEY`, `ABUSECH_AUTH_KEY` — optional, used by `/lookup-ioc`, `/threat-hunt`, and IOC enrichment inside `/triage-alert`. Each source degrades gracefully if its key is missing.
+- **`vector` binary** for `/write-vrl` only — used to run drafted VRL against sample input before handing the program back. Looks on PATH then at `~/.vector/bin/vector`. Install with `curl --proto '=https' --tlsv1.2 -sSf https://sh.vector.dev | bash` or see <https://vector.dev/docs/setup/installation/>.
 
 ## Install
 
@@ -79,8 +81,13 @@ skills/
 ├── threat-hunt/
 ├── posture-report/
 ├── investigate/
-└── lookup-ioc/
-    └── scripts/            # bash helpers fanning out to ThreatFox / OTX / Feodo
+├── lookup-ioc/
+│   └── scripts/            # bash helpers fanning out to ThreatFox / OTX / Feodo
+└── write-vrl/
+    ├── references/         # Scanner VRL conventions, corpus index, ECS 9.5.0 schema CSV
+    ├── corpus/             # 15 production ECS transforms + 2 enrichment patterns
+    ├── examples/           # ready-to-use lookup-table fixtures (CSV + MMDB + Go regen)
+    └── scripts/            # `vector vrl` wrapper supporting CSV + MMDB enrichment tables
 ```
 
 Each skill folder is self-contained: `SKILL.md` is the entry point, `references/` holds longer methodology that the skill loads progressively, and `scripts/` holds bash helpers the skill shells out to.

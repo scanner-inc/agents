@@ -1,0 +1,49 @@
+# Timestamps from CloudFront logs are separated into two fields, `date` and
+# `time`. They are guaranteed to be in `YYYY-MM-DD` and `HH:MM:SS` format and
+# in UTC timezone.
+timestamp_raw = join([.date, .time], separator: " ") ?? ""
+timestamp_parsed, err = parse_timestamp(timestamp_raw, format: "%F %T", timezone: "UTC")
+if err == null {
+  .@ecs.@timestamp = to_string(timestamp_parsed)
+}
+
+# Generate ECS normalized fields
+.@ecs.source.ip = ."c-ip"
+.@ecs.source.port = to_int(."c-port") ?? 0
+.@ecs.source.bytes = to_int(."cs-bytes") ?? 0
+.@ecs.destination.bytes = to_int(."sc-bytes") ?? 0
+.@ecs.network.protocol = downcase(."cs-protocol") ?? ."cs-protocol"
+.@ecs.network.transport = "tcp"
+
+.@ecs.user_agent = decode_percent(."cs(User-Agent)") ?? ""
+
+.@ecs.http.request.method = ."cs-method"
+.@ecs.http.version = ."cs-protocol-version"
+
+.@ecs.url.domain = ."cs(Host)"
+.@ecs.url.path = ."cs-uri-stem"
+.@ecs.url.query = if (."cs-uri-query" != "-") {
+  ."cs-uri-query"
+} else {
+  null
+}
+
+.@ecs.http.response.status_code = to_int(."sc-status") ?? 0
+.@ecs.http.response.mime_type = ."sc-content-type"
+.@ecs.http.response.bytes = to_int(."sc-bytes") ?? 0
+.@ecs.http.response.body.bytes = to_int(."sc-content-len") ?? 0
+
+.@ecs.tls.version_protocol = ."ssl-protocol"
+.@ecs.tls.cipher = ."ssl-cipher"
+
+.@ecs.observer.type = "cloudfront"
+.@ecs.observer.hostname = ."x-host-header"
+.@ecs.observer.id = ."x-edge-location"
+.@ecs.event.outcome = if (.@ecs.http.response.status_code < 400) {
+  "success"
+} else {
+  "failure"
+}
+
+# Return the top-level object
+.

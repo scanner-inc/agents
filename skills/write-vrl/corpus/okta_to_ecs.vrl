@@ -1,0 +1,35 @@
+# Okta docs do not mention the `detail` field, but it is present in at least
+# some data we have seen. So we use it if it exists.
+event_obj = if !is_nullish(.detail) {
+    .detail
+} else {
+    .
+}
+
+# Event specific fields
+.@ecs.event.action = event_obj.eventType
+.@ecs.event.outcome = event_obj.outcome.result
+
+# User fields
+.@ecs.user.id = event_obj.actor.id
+.@ecs.user.email = event_obj.actor.alternateId
+.@ecs.user.name = event_obj.actor.displayName
+.@ecs.user.type = event_obj.actor.type
+
+# Source fields
+.@ecs.source.ip = event_obj.client.ipAddress
+if !is_nullish(event_obj.client.geographicalContext) {
+    .@ecs.source.geo.city_name = event_obj.client.geographicalContext.city
+    .@ecs.source.geo.country_name = event_obj.client.geographicalContext.country
+    .@ecs.source.geo.region_name = event_obj.client.geographicalContext.state
+}
+
+# HTTP fields
+if !is_nullish(event_obj.debugContext.debugData) {
+    .@ecs.http.request_id = event_obj.debugContext.debugData.requestId
+    .@ecs.http.url = event_obj.debugContext.debugData.url
+    .@ecs.user_agent = event_obj.debugContext.debugData.rawUserAgent
+}
+
+# Return the top-level object
+.

@@ -1,0 +1,46 @@
+# IP classification enrichment via Scanner lookup table
+#
+# Worked example: an upstream ECS-normalization transform has populated
+# .@ecs.source.ip. This step looks the IP up against a Scanner lookup table
+# of CIDR ranges and writes a classification (e.g. "corporate" / "other")
+# to .@ecs.network.zone.
+#
+# Lookup table:
+#   name:    ip_classification
+#   schema:  cidr (string), classification (string)
+#   ordering: list more specific CIDRs first — the loop takes the first match
+#
+# Useful patterns to lift:
+#   - find_enrichment_table_records!() + for_each() for CIDR lookups
+#   - is_ipv4/is_ipv6 guard before ip_cidr_contains
+#   - matched-flag pattern for first-match-wins iteration
+#   - defaulting when no row matches (classification = "other" up front)
+#
+# Apply this transform AFTER the source-specific ECS normalization step that
+# populates @ecs.source.ip (e.g. aws_cloudtrail_to_ecs.vrl, okta_to_ecs.vrl).
+
+if !is_nullish(.@ecs.source.ip) {
+    src_ip = to_string(.@ecs.source.ip) ?? ""
+    if src_ip != "" && (is_ipv4(src_ip) || is_ipv6(src_ip)) {
+        records = find_enrichment_table_records!("ip_classification", {})
+
+        classification = "other"
+        matched = false
+        for_each(records) -> |_idx, record| {
+            if !matched {
+                result, err = ip_cidr_contains(record.cidr, src_ip)
+                if err == null && result == true {
+                    class_str, _conv_err = to_string(record.classification)
+                    if !is_nullish(class_str) {
+                        classification = class_str
+                    }
+                    matched = true
+                }
+            }
+        }
+
+        .@ecs.network.zone = classification
+    }
+}
+
+.

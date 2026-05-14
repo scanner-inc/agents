@@ -1,0 +1,33 @@
+# Set event outcome and error details based on errorCode
+if is_nullish(.errorCode) {
+  .@ecs.event.outcome = "success"
+} else {
+  .@ecs.event.outcome = "failure"
+  .@ecs.error.code = .errorCode
+  .@ecs.error.message = .errorMessage
+}
+
+# Cloud provider specific fields
+.@ecs.cloud.provider = "aws"
+.@ecs.cloud.region = .awsRegion
+.@ecs.cloud.account.id = .recipientAccountId
+.@ecs.cloud.service.name = .eventSource
+
+# Event action
+.@ecs.event.action = .eventName
+
+# HTTP and source details
+.@ecs.http.request_id = .requestID
+.@ecs.source.ip = .sourceIPAddress
+.@ecs.user_agent = .userAgent
+
+# User identity fields
+.@ecs.user.id = .userIdentity.arn
+if !is_nullish(.userIdentity.userName) {
+    .@ecs.user.name = .userIdentity.userName
+} else if !is_nullish(.userIdentity.sessionContext.sessionIssuer.userName) {
+    .@ecs.user.name = .userIdentity.sessionContext.sessionIssuer.userName
+} 
+
+# Return the top-level object
+.

@@ -1,0 +1,60 @@
+# IPInfo Lite GeoIP enrichment for @ecs.source.ip
+#
+# Looks the source IP up against an MMDB enrichment table populated from
+# IPInfo Lite (https://ipinfo.io/lite). On a hit, writes ECS-compliant geo
+# and AS fields under @ecs.source.{geo,as}. On a miss, leaves the event
+# untouched.
+#
+# Lookup table:
+#   name:    ipinfo_lite
+#   type:    MMDB
+#   columns: country_code, country, continent_code, continent, asn, as_name
+#
+# Apply this transform AFTER the source-specific ECS normalization step that
+# populates @ecs.source.ip (e.g. aws_cloudtrail_to_ecs.vrl, okta_to_ecs.vrl).
+# To enrich destination IPs too, duplicate this block reading .@ecs.destination.ip
+# and writing to .@ecs.destination.{geo,as}.
+
+if !is_nullish(.@ecs.source.ip) {
+    src_ip = to_string(.@ecs.source.ip) ?? ""
+    if src_ip != "" && (is_ipv4(src_ip) || is_ipv6(src_ip)) {
+        record, err = get_enrichment_table_record("ipinfo_lite", {"ip": src_ip})
+
+        if err == null {
+            # Geo fields — skip blanks so we don't pollute events with ""
+            country_code = to_string(record.country_code) ?? ""
+            if country_code != "" {
+                .@ecs.source.geo.country_iso_code = country_code
+            }
+            country = to_string(record.country) ?? ""
+            if country != "" {
+                .@ecs.source.geo.country_name = country
+            }
+            continent_code = to_string(record.continent_code) ?? ""
+            if continent_code != "" {
+                .@ecs.source.geo.continent_code = continent_code
+            }
+            continent = to_string(record.continent) ?? ""
+            if continent != "" {
+                .@ecs.source.geo.continent_name = continent
+            }
+
+            # AS fields — ipinfo_lite encodes ASN as "AS15169"; strip prefix and parse.
+            # ECS as.number is an integer.
+            asn_str = to_string(record.asn) ?? ""
+            if asn_str != "" {
+                asn_num_str = if starts_with(asn_str, "AS") { slice!(asn_str, 2) } else { asn_str }
+                asn_num, parse_err = to_int(asn_num_str)
+                if parse_err == null {
+                    .@ecs.source.as.number = asn_num
+                }
+            }
+            as_name = to_string(record.as_name) ?? ""
+            if as_name != "" {
+                .@ecs.source.as.organization.name = as_name
+            }
+        }
+    }
+}
+
+.
