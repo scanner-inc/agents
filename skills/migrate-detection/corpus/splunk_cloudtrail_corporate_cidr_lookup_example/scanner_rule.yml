@@ -1,0 +1,70 @@
+# schema: https://scanner.dev/schema/scanner-detection-rule.v1.json
+name: AWS IAM Privileged Action from Non-Corporate Network
+enabled: Staging
+description: |-
+  Detects high-privilege IAM actions (CreateUser, AttachRolePolicy, PutUserPolicy,
+  CreateAccessKey) originating from source IPs that are NOT in the corporate
+  CIDR ranges.
+
+  ## Dependency: VRL enrichment
+  This rule reads the field `@enrichment.ip_classification`, which is added at
+  ingest time by the `corporate_cidrs_classification` VRL transformation (see
+  `enrich.vrl` in this corpus directory).
+
+  **Before activating this rule, install the VRL transformation in Scanner UI:**
+  1. Settings → Transformations → New Transformation, paste `enrich.vrl`.
+  2. Settings → Enrichment Tables → New Lookup Table named `corporate_cidrs`,
+     upload `lookup_corporate_cidrs.csv` (or your real version).
+  3. Bind the transformation to the `aws:cloudtrail` ingest pipeline.
+  4. Wait one ingestion cycle so the field exists in indexed data.
+
+  ## False Positives
+  * Admin activity from AWS CloudShell or other AWS-controlled IP ranges
+    that aren't in the lookup. Add the relevant CIDRs.
+
+  Migrated from Splunk security_content rule `99999999-…` (synthetic, for
+  illustration of the lookup-table → VRL enrichment migration pattern).
+severity: High
+query_text: |-
+  @scnr.source_type="aws:cloudtrail"
+  eventSource="iam.amazonaws.com"
+  eventName: ("CreateUser" "AttachRolePolicy" "PutUserPolicy" "CreateAccessKey")
+  @enrichment.ip_classification="non_corporate"
+  not errorCode:*
+  | stats
+      min(@scnr.datetime) as firstTime,
+      max(@scnr.datetime) as lastTime,
+      count() as eventCount
+      by sourceIPAddress, userIdentity.arn, eventName, awsRegion
+time_range_s: 300
+run_frequency_s: 60
+event_sink_keys:
+  - high_severity_alerts
+tags:
+  - source.cloudtrail
+  - tactics.ta0003.persistence
+  - tactics.ta0004.privilege_escalation
+  - techniques.t1078.valid_accounts
+  - techniques.t1098.account_manipulation
+alert_template:
+  info:
+    - label: User
+      value: "{{results_table.rows[0].userIdentity.arn}}"
+      use_for_dedup: true
+    - label: Source IP
+      value: "{{results_table.rows[0].sourceIPAddress}}"
+    - label: Action
+      value: "{{results_table.rows[0].eventName}}"
+    - label: Region
+      value: "{{results_table.rows[0].awsRegion}}"
+tests:
+  - name: Fires when CreateUser comes from a non-corporate IP
+    now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_inline: |
+      {"timestamp":"2026-05-15T00:02:30.000Z","@scnr.source_type":"aws:cloudtrail","eventSource":"iam.amazonaws.com","eventName":"CreateUser","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"sourceIPAddress":"8.8.8.8","@enrichment":{"ip_classification":"non_corporate"},"awsRegion":"us-east-1"}
+    expected_detection_result: true
+  - name: Does not fire when CreateUser comes from a corporate IP
+    now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_inline: |
+      {"timestamp":"2026-05-15T00:02:30.000Z","@scnr.source_type":"aws:cloudtrail","eventSource":"iam.amazonaws.com","eventName":"CreateUser","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"sourceIPAddress":"10.0.5.42","@enrichment":{"ip_classification":"corporate"},"awsRegion":"us-east-1"}
+    expected_detection_result: false

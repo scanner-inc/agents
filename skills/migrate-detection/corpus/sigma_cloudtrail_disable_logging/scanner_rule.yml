@@ -1,0 +1,32 @@
+# schema: https://scanner.dev/schema/scanner-detection-rule.v1.json
+name: AWS CloudTrail Important Change
+description: |-
+  Detects disabling, deleting and updating of a Trail
+
+  References:
+  * https://docs.aws.amazon.com/awscloudtrail/latest/userguide/best-practices-security.html
+
+  False Positives:
+  * Valid change in a Trail
+severity: Medium
+query_text: |-
+  @scnr.source_type="aws:cloudtrail"
+  eventSource="cloudtrail.amazonaws.com"
+  eventName=(StopLogging UpdateTrail DeleteTrail)
+  | stats
+    min(@scnr.datetime) as firstTime,
+    max(@scnr.datetime) as lastTime,
+    count() as eventCount
+    by
+    userIdentity.arn,
+    eventSource,
+    eventName,
+    awsRegion
+time_range_s: 300
+run_frequency_s: 60
+event_sink_keys:
+- medium_severity_alerts
+tags:
+- tactics.ta0005.defense_evasion
+- techniques.t1562.impair_defenses
+- source.cloudtrail

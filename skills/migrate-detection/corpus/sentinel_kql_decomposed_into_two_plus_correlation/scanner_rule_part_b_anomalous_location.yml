@@ -1,0 +1,36 @@
+# schema: https://scanner.dev/schema/scanner-detection-rule.v1.json
+name: Azure AD successful sign-in from anomalous country (one of two rules for the credential-stuffing correlation)
+enabled: Staging
+description: |-
+  Detects a successful Azure AD sign-in from a country that this user hasn't
+  signed in from in the previous 30 days. Uses an enriched field
+  `@enrichment.user_country_is_anomalous` (boolean) added at ingest time by the
+  VRL transformation `azure_signin_anomalous_country` (see write-vrl skill for
+  the recipe — it maintains a per-user country set in a Scanner enrichment table).
+
+  This rule is one of TWO that feed the
+  `Credential stuffing followed by anomalous-location success` correlation rule
+  (see `scanner_correlation.yml`). It is tagged
+  `correlation.azure_credential_stuffing` so the correlation rule can join it.
+
+  Severity is intentionally Low — anomalous-location sign-in on its own is
+  often a false positive (travel, VPN). The correlation rule promotes it to
+  High when paired with a recent failure burst.
+
+  ## Dependency
+  Install the VRL transformation `azure_signin_anomalous_country` and the
+  `user_country_history` enrichment table before activating.
+severity: Low
+query_text: |-
+  @scnr.source_type="azure:signin"
+  ResultType="0"
+  @enrichment.user_country_is_anomalous="true"
+  | stats count() as eventCount by UserPrincipalName, IPAddress, LocationDetails.countryOrRegion
+  | where eventCount > 0
+time_range_s: 3600
+run_frequency_s: 3600
+tags:
+  - source.azure_signin
+  - tactics.ta0001.initial_access
+  - techniques.t1078.valid_accounts
+  - correlation.azure_credential_stuffing

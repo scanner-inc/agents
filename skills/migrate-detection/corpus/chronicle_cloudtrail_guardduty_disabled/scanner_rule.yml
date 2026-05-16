@@ -1,0 +1,31 @@
+# schema: https://scanner.dev/schema/scanner-detection-rule.v1.json
+name: AWS GuardDuty detector deleted
+description: |-
+  ## Goal
+  Detect when an attacker attempts to evade defenses by deleting a GuardDuty detector.
+
+  ## Strategy
+  Monitor the CloudTrail API call to detect if an attacker is deleting a GuardDuty detector:
+
+  * DeleteDetector
+
+  ## Triage and response
+  1. Identify the user who owns the API key that made this call.
+  2. Contact the user to confirm if they intended to make this call.
+  3. If the user did not make the call:
+      * Rotate the credentials.
+      * Investigate any other unauthorized API calls made with the same credentials.
+severity: High
+query_text: |-
+  @scnr.source_type:"aws:cloudtrail"
+  eventName:DeleteDetector
+  | groupbycount(userIdentity.arn)
+  | where @q.count > 0
+time_range_s: 300
+run_frequency_s: 60
+event_sink_keys:
+- high_severity_alerts
+tags:
+- techniques.t1562.impair_defenses
+- source.cloudtrail
+- tactics.ta0005.defense_evasion
