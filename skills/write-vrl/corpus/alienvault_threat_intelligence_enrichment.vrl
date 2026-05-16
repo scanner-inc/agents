@@ -1,0 +1,139 @@
+# Threat Intelligence Enrichment — user-uploadable form
+#
+# Joins each event against an IOC lookup table and pushes any matches onto
+# @ecs.threat.enrichments. Paste this directly into a Scanner transformation
+# (Library → Transformations → +); no other config needed beyond the three
+# constants below.
+#
+# Adapt three things at the top of the program for your use case:
+#   LOOKUP_TABLE_NAME  — the Scanner lookup table to join against (required;
+#                        must be a string literal — Scanner only accepts a
+#                        literal here, not a variable).
+#   MATCH_PATH         — which field in the log to read as the candidate IOC
+#                        value (e.g. ["@ecs", "destination", "ip"] for VPC flow
+#                        destination, ["@ecs", "file", "hash", "sha256"] for
+#                        EDR file hashes, etc.).
+#   RESULT_ARRAY_PATH  — where matches get pushed. Stick with the ECS default
+#                        unless you have a reason not to.
+#
+# The program automatically picks the right typed indicator slot
+# (indicator.ip / indicator.url / indicator.email / indicator.file.hash.*)
+# from the lookup table record's `type` column — you don't configure the
+# indicator type separately.
+#
+# This program never throws on a per-event problem (a throw would halt
+# ingestion of the whole file). On any miss or mismatch it returns `.`
+# unchanged.
+
+# Field in the log to match against:
+MATCH_PATH = ["@ecs", "source", "ip"]
+
+# Where to write enrichment results (preserves any existing entries):
+RESULT_ARRAY_PATH = ["@ecs", "threat", "enrichments"]
+
+
+# --- Stage 1: read the candidate IOC value from the event ---------------
+
+match_value, err = get(., path: MATCH_PATH)
+if err != null || is_nullish(match_value) {
+  # No value at MATCH_PATH (or errored) — nothing to enrich.
+  return .
+}
+
+
+# --- Stage 2: read the existing enrichment array (don't clobber) --------
+
+existing_threats = {
+  existing = get!(., path: RESULT_ARRAY_PATH)
+
+  if existing == null {
+    []
+  } else if is_array(existing) {
+    array!(existing)
+  } else {
+    # Something non-array already lives at RESULT_ARRAY_PATH — bail rather
+    # than overwriting unrelated data.
+    return .
+  }
+}
+
+
+# --- Stage 3: look up the IOC in the lookup table -----------------------
+#
+# Note: get_enrichment_table_record requires a string literal as the table
+# name — you can't pass a variable. Edit "alienvault_scanner_internal_ipv4"
+# below to whatever LOOKUP_TABLE_NAME you actually need.
+
+enrichment_result, err = get_enrichment_table_record(
+  "alienvault_scanner_internal_ipv4",
+  { "indicator": match_value },
+)
+
+if err != null {
+  # No matching IOC in the table — return event unmodified.
+  return .
+}
+
+
+# --- Stage 4: build the threat object ------------------------------------
+#
+# Both indicator.type and the typed slot below are derived from the same
+# source (the lookup table record's `type` column) so they can't drift.
+
+matched_indicator = to_string!(match_value)
+record_type, err = to_string(enrichment_result.type)
+if err != null || is_nullish(record_type) {
+  # Lookup table row didn't have a usable `type` column — skip enrichment.
+  return .
+}
+
+# The hash-* types collapse into "file" for ECS indicator.type:
+simplified_type = if record_type == "file-hash-md5" ||
+  record_type == "file-hash-sha1" ||
+  record_type == "file-hash-sha256" {
+  "file"
+} else {
+  record_type
+}
+
+threat_obj = {
+  "indicator": {
+    "name":        matched_indicator,
+    "type":        [simplified_type],
+    "first_seen":  enrichment_result.first_seen,
+    "last_seen":   enrichment_result.last_seen,
+    "description": enrichment_result.description,
+    "provider":    enrichment_result.provider,
+    "reference":   enrichment_result.reference,
+  },
+  "matched": {
+    "atomic": matched_indicator,
+    "field":  join!(array!(MATCH_PATH), "."),
+  },
+}
+
+# Typed slot under indicator.*, keyed off the same record_type so it can't
+# diverge from indicator.type above:
+if record_type == "ipv4-addr" || record_type == "ipv6-addr" {
+  threat_obj.indicator.ip = matched_indicator
+} else if record_type == "url" {
+  threat_obj.indicator.url = { "original": matched_indicator }
+} else if record_type == "domain-name" {
+  threat_obj.indicator.url = { "domain": matched_indicator }
+} else if record_type == "email-addr" {
+  threat_obj.indicator.email = { "address": matched_indicator }
+} else if record_type == "file-hash-md5" {
+  threat_obj.indicator.file = { "hash": { "md5": matched_indicator } }
+} else if record_type == "file-hash-sha1" {
+  threat_obj.indicator.file = { "hash": { "sha1": matched_indicator } }
+} else if record_type == "file-hash-sha256" {
+  threat_obj.indicator.file = { "hash": { "sha256": matched_indicator } }
+}
+
+
+# --- Stage 5: push onto RESULT_ARRAY_PATH and return ---------------------
+
+result_array = push!(existing_threats, threat_obj)
+. = set!(., path: RESULT_ARRAY_PATH, data: result_array)
+
+.

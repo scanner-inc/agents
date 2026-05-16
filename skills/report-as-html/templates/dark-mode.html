@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>{{TITLE}}</title>
+<style>
+  /* Scanner dark-mode theme.
+     Palette + type rules mirror the Scanner design system (Inter + Sometype
+     Mono, dark-first, hairline borders, almost no shadow). CSS variable names
+     are kept parallel to templates/light-mode.html so the same component
+     vocabulary in references/components.md renders correctly in either. */
+  :root {
+    /* Surfaces */
+    --bg:        #0a0a0a;
+    --panel:     #141414;
+    --panel-2:   #1a1a1a;             /* code blocks, tinted strips */
+    --ink:       #f7f7f7;
+    --ink-2:     #ababab;
+    --ink-3:     #6e6e6e;
+    --line:      #1f1f1f;
+    --line-2:    #383838;
+
+    /* Accents — used sparingly */
+    --accent:        rgb(140,180,255); /* cool blue — section headers, links, numbered badges */
+    --accent-soft:   rgba(140,180,255,0.14);
+    --accent-2:      rgb(200,220,255);
+
+    /* Status / severity */
+    --green:      rgb(102,173,31);
+    --green-bg:   rgba(102,173,31,0.14);
+    --green-line: rgba(102,173,31,0.45);
+    --amber:      rgb(220,180,140);
+    --amber-bg:   rgba(220,180,140,0.12);
+    --amber-line: rgba(220,180,140,0.40);
+    --red:        rgb(247,108,108);
+    --red-bg:     rgba(247,108,108,0.14);
+    --red-line:   rgba(247,108,108,0.40);
+    --plum:       rgb(200,160,240);
+    --plum-bg:    rgba(200,160,240,0.14);
+    --teal:       rgb(140,180,255);
+    --rust:       rgb(255,170,110);
+    --olive:      rgb(170,210,140);
+
+    /* Type */
+    --mono:  "Sometype Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans:  "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --serif: var(--sans); /* dark theme uses sans for headings too — keep var so component CSS stays compatible */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+  body { font-family: var(--sans); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  .page { max-width: 960px; margin: 0 auto; padding: 48px 40px 80px; }
+
+  .doc-header { border-bottom: 1px solid var(--line); padding-bottom: 22px; margin-bottom: 28px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; color: var(--ink-2); }
+  h1.doc-title { font-family: var(--sans); font-size: 34px; line-height: 1.15; margin: 8px 0 0 0; font-weight: 500; letter-spacing: -0.02em; color: var(--ink); }
+  .doc-title .glyph { color: var(--accent); margin-right: 8px; font-weight: 400; }
+
+  /* Verdict variants */
+  .verdict {
+    margin: 24px 0 28px; border-left: 3px solid var(--green);
+    background: var(--green-bg); border-radius: 0 6px 6px 0;
+    padding: 18px 22px; color: var(--ink);
+  }
+  .verdict.amber { border-left-color: var(--amber); background: var(--amber-bg); }
+  .verdict.red   { border-left-color: var(--red);   background: var(--red-bg); }
+  .verdict .badge {
+    display: inline-block; font-family: var(--mono); font-size: 11px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    background: rgba(255,255,255,0.06); color: var(--ink);
+    border: 1px solid var(--line-2);
+    padding: 2px 8px; border-radius: 3px; margin-bottom: 8px;
+  }
+  .verdict p { margin: 0; font-size: 16px; line-height: 1.55; color: var(--ink); }
+  .verdict strong { color: var(--ink); font-weight: 600; }
+
+  /* Stat tiles */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 0 0 36px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
+  .stat .num { font-family: var(--sans); font-size: 28px; line-height: 1.1; color: var(--ink); font-weight: 500; letter-spacing: -0.02em; }
+  .stat.warn .num { color: var(--amber); }
+  .stat.bad  .num { color: var(--red); }
+  .stat.good .num { color: var(--green); }
+  .stat .lbl { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); margin-top: 6px; }
+
+  section { margin-bottom: 32px; }
+  h2 { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 500; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+
+  p { color: var(--ink-2); }
+  p strong, strong { color: var(--ink); }
+
+  code.inline { font-family: var(--mono); font-size: 12.5px; background: var(--panel-2); padding: 1px 6px; border-radius: 3px; color: var(--ink); border: 1px solid var(--line); }
+  pre.codeblock { font-family: var(--mono); font-size: 12.5px; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; margin: 6px 0 0; overflow-x: auto; line-height: 1.5; }
+
+  /* Diagram canvas */
+  .diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px; margin-bottom: 14px; }
+  .diagram svg { width: 100%; height: auto; display: block; }
+  .diagram-caption { color: var(--ink-3); font-size: 13px; font-style: italic; margin-top: 4px; }
+
+  /* Data tables */
+  table.data { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  table.data thead th { text-align: left; background: var(--panel-2); color: var(--ink-2); font-weight: 500; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  table.data thead th.num, table.data tbody td.num { text-align: right; }
+  table.data tbody td { padding: 8px 12px; border-bottom: 1px solid var(--line); color: var(--ink); vertical-align: top; }
+  table.data tbody tr:last-child td { border-bottom: none; }
+  table.data tbody td.note { color: var(--ink-3); font-family: var(--sans); font-size: 13px; }
+
+  /* Bar cells inside tables */
+  .bar-cell { position: relative; min-width: 220px; }
+  .bar-cell .bar { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); height: 6px; border-radius: 3px; background: var(--accent-soft); }
+  .bar-cell .bar-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+
+  /* Top-N numbered cards */
+  ol.top { list-style: none; padding: 0; margin: 0; counter-reset: t; display: grid; gap: 10px; }
+  ol.top > li { counter-increment: t; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px 16px 58px; position: relative; }
+  ol.top > li::before { content: counter(t); position: absolute; left: 14px; top: 14px; width: 30px; height: 30px; border-radius: 4px; background: transparent; color: var(--ink); border: 1px solid var(--line-2); font-family: var(--mono); font-weight: 500; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  ol.top .title { font-weight: 600; color: var(--ink); margin-bottom: 4px; font-size: 15px; }
+  ol.top .desc { color: var(--ink-2); font-size: 14px; margin-bottom: 8px; }
+
+  /* Command rows */
+  .cmd { font-family: var(--mono); font-size: 12.5px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 7px 10px; color: var(--ink-2); overflow-x: auto; white-space: nowrap; }
+  .cmd .arr { color: var(--ink-3); margin-right: 6px; }
+  .cmd .skill { color: var(--accent); font-weight: 500; margin-right: 6px; }
+  .cmd.ui { color: var(--amber); background: rgba(220,180,140,0.07); border-color: var(--amber-line); }
+  .cmd.ui a { color: var(--amber); }
+  .cmd a { color: inherit; text-decoration: underline; }
+
+  /* Track entry cards */
+  ul.track { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  ul.track > li { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--line-2); border-radius: 6px; padding: 14px 16px; }
+  ul.track > li.sev-critical { border-left-color: var(--red); }
+  ul.track > li.sev-high     { border-left-color: var(--red); }
+  ul.track > li.sev-medium   { border-left-color: var(--amber); }
+  ul.track > li.sev-low      { border-left-color: var(--olive); }
+  ul.track > li.sev-info     { border-left-color: var(--teal); }
+  ul.track > li.sev-corr     { border-left-color: var(--green); }
+  ul.track > li.sev-pack     { border-left-color: var(--plum); }
+  .entry-title { font-weight: 600; color: var(--ink); font-size: 15px; margin-bottom: 4px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--ink-3); margin: 4px 0 8px; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.04); border: 1px solid var(--line); color: var(--ink-2); }
+  .pill.source { color: var(--accent); border-color: var(--accent-soft); background: var(--accent-soft); }
+  .pill.tag    { color: var(--plum); border-color: rgba(200,160,240,0.35); background: var(--plum-bg); }
+  .pill.fires  { color: var(--amber); border-color: var(--amber-line); background: var(--amber-bg); }
+  .pill.regime { color: var(--teal); border-color: var(--accent-soft); background: var(--accent-soft); }
+  .pill.sev    { color: var(--red); border-color: var(--red-line); background: var(--red-bg); }
+  .body       { color: var(--ink-2); font-size: 14px; margin: 4px 0 8px; }
+  .body strong { color: var(--ink); }
+
+  /* Coverage matrix */
+  table.matrix { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  table.matrix thead th { text-align: center; background: var(--panel-2); color: var(--ink-2); font-weight: 500; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  table.matrix thead th.tac { text-align: left; }
+  table.matrix tbody td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: center; color: var(--ink); }
+  table.matrix tbody td.tac { text-align: left; font-family: var(--mono); color: var(--ink-2); }
+  table.matrix tbody tr:last-child td { border-bottom: none; }
+  td.cov-0  { color: var(--ink-3); background: transparent; }
+  td.cov-lo { background: var(--amber-bg); color: var(--amber); font-weight: 600; }
+  td.cov-md { background: rgba(170,210,140,0.12); color: var(--olive); font-weight: 600; }
+  td.cov-hi { background: var(--green-bg); color: var(--green); font-weight: 700; }
+  .matrix-note { color: var(--ink-3); font-size: 13px; font-style: italic; margin-top: 6px; }
+  .matrix-note strong { color: var(--ink); font-style: normal; }
+
+  ul.bullets { margin: 0; padding-left: 22px; }
+  ul.bullets li { margin-bottom: 10px; line-height: 1.55; color: var(--ink-2); }
+  ul.bullets li strong { color: var(--ink); }
+  ul.bullets li:last-child { margin-bottom: 0; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .row2 { grid-template-columns: 1fr; }
+  }
+
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 12px; font-family: var(--mono); display: flex; justify-content: space-between; letter-spacing: 0.04em; }
+
+  ::selection { background: var(--accent-soft); color: var(--ink); }
+
+  @media print {
+    body { background: #fff; color: #111; font-size: 11pt; }
+    .page { padding: 0; max-width: none; }
+    .verdict, .stats, .diagram, table.data, table.matrix, ol.top > li, ul.track > li { break-inside: avoid; }
+    h2 { break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header class="doc-header">
+    <div class="eyebrow">{{EYEBROW}}</div>
+    <h1 class="doc-title"><span class="glyph">{{GLYPH}}</span>{{TITLE}}</h1>
+  </header>
+
+  {{CONTENT}}
+
+  <footer>
+    <span>{{SKILL_NAME}}</span>
+    <span>{{FOOTER_META}}</span>
+  </footer>
+
+</main>
+</body>
+</html>

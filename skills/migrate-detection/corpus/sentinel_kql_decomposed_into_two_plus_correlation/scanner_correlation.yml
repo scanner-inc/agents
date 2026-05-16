@@ -1,0 +1,53 @@
+# schema: https://scanner.dev/schema/scanner-detection-rule.v1.json
+name: Credential stuffing followed by anomalous-location success
+enabled: Staging
+description: |-
+  Correlation rule that fires when both of these signals trip on the same
+  Azure AD user within a 1-hour window:
+
+  1. `Azure AD failed sign-in burst` — 10+ failed sign-ins.
+  2. `Azure AD successful sign-in from anomalous country` — successful sign-in
+     from a country that user hasn't used in the previous 30 days.
+
+  This is the Scanner equivalent of the original Sentinel KQL rule which
+  expressed the same pattern with a `join` across sub-queries.
+
+  ## Trade-off vs the original
+  - The original Sentinel rule joins **within the same query** and orders the
+    failures BEFORE the success. Scanner's correlation rule matches "both
+    fired in the window" without strict ordering.
+  - In practice the ordering is implicit: the failure rule needs 10+ failures
+    over 1h, and the success rule fires on the success event. If the success
+    happened first, the failure rule wouldn't have crossed its threshold yet.
+  - The success-rule still requires the ingest-time enrichment for the
+    "anomalous country" classification, so the data hand-off is the same.
+
+  Severity bumped to High (one level above the Low constituents) because two
+  independent signals co-firing on the same user is, by construction, a
+  higher-confidence indicator than either alone.
+
+  Migrated from Sentinel rule `99999999-0000-0000-0000-000000000002`.
+severity: High
+query_text: |-
+  @index={ 00000000-0000-0000-0000-000000000000 | "_detections" }
+  tags[*]:correlation.azure_credential_stuffing
+  | stats countdistinct(name) as rule_count by results_table.rows[0].UserPrincipalName
+  | where rule_count >= 2
+time_range_s: 3600
+run_frequency_s: 300
+event_sink_keys:
+  - high_severity_alerts
+tags:
+  - source.azure_signin
+  - tactics.ta0006.credential_access
+  - tactics.ta0001.initial_access
+  - techniques.t1110.brute_force
+  - techniques.t1078.valid_accounts
+  - correlation.azure_credential_stuffing
+alert_template:
+  info:
+    - label: User
+      value: "{{results_table.rows[0].UserPrincipalName}}"
+      use_for_dedup: true
+    - label: Distinct signal rules tripped
+      value: "{{results_table.rows[0].rule_count}}"

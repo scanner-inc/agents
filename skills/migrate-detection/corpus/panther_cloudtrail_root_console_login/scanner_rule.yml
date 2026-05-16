@@ -1,0 +1,60 @@
+# schema: https://scanner.dev/schema/scanner-detection-rule.v1.json
+name: AWS Root Console Login
+enabled: Staging
+description: |-
+  Detects successful AWS console login by the root account. Root logins should
+  be exceedingly rare; investigate any occurrence.
+
+  ## References
+  * AWS — IAM root user best practices: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html
+
+  ## False Positives
+  * Initial AWS account setup (one-time).
+  * Periodic root-account password rotation by a designated administrator.
+
+  Migrated from Panther rule `AWS.CloudTrail.RootConsoleLogin`.
+severity: High
+query_text: |-
+  @scnr.source_type="aws:cloudtrail"
+  eventName="ConsoleLogin"
+  userIdentity.type="Root"
+  responseElements.ConsoleLogin="Success"
+  | stats
+      min(@scnr.datetime) as firstTime,
+      max(@scnr.datetime) as lastTime,
+      count() as eventCount
+      by sourceIPAddress, awsRegion, recipientAccountId
+time_range_s: 300
+run_frequency_s: 60
+event_sink_keys:
+  - high_severity_alerts
+tags:
+  - source.cloudtrail
+  - tactics.ta0001.initial_access
+  - tactics.ta0003.persistence
+  - techniques.t1078.valid_accounts
+alert_template:
+  info:
+    - label: Source IP
+      value: "{{results_table.rows[0].sourceIPAddress}}"
+      use_for_dedup: true
+    - label: Account
+      value: "{{results_table.rows[0].recipientAccountId}}"
+    - label: Region
+      value: "{{results_table.rows[0].awsRegion}}"
+tests:
+  - name: Root console login fires
+    now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_inline: |
+      {"timestamp":"2026-05-15T00:02:30.000Z","@scnr.source_type":"aws:cloudtrail","eventName":"ConsoleLogin","userIdentity":{"type":"Root"},"responseElements":{"ConsoleLogin":"Success"},"sourceIPAddress":"203.0.113.5","awsRegion":"us-east-1","recipientAccountId":"123456789012"}
+    expected_detection_result: true
+  - name: IAM user console login does not fire
+    now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_inline: |
+      {"timestamp":"2026-05-15T00:02:30.000Z","@scnr.source_type":"aws:cloudtrail","eventName":"ConsoleLogin","userIdentity":{"type":"IAMUser","userName":"johndoe"},"responseElements":{"ConsoleLogin":"Success"},"sourceIPAddress":"203.0.113.5","awsRegion":"us-east-1","recipientAccountId":"123456789012"}
+    expected_detection_result: false
+  - name: Failed root console login does not fire
+    now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_inline: |
+      {"timestamp":"2026-05-15T00:02:30.000Z","@scnr.source_type":"aws:cloudtrail","eventName":"ConsoleLogin","userIdentity":{"type":"Root"},"responseElements":{"ConsoleLogin":"Failure"},"sourceIPAddress":"203.0.113.5","awsRegion":"us-east-1","recipientAccountId":"123456789012"}
+    expected_detection_result: false

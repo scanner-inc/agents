@@ -152,13 +152,16 @@ write-vrl/
 ├── references/
 │   ├── conventions.md            # Scanner VRL rules — @ecs target, drop pattern, error handling, enrichment functions
 │   ├── corpus_index.md           # index over the transforms in corpus/
+│   ├── ioc_enrichment.md         # IOC threat-intel enrichment pattern (lookup table → VRL → @ecs.threat.enrichments)
 │   └── ecs_schema_9.5.0.csv     # full ECS 9.5.0 field list — grep, don't read whole
 ├── corpus/                   # production VRL programs Scanner uses for popular log sources
 │   ├── aws_cloudtrail_to_ecs.vrl
 │   ├── okta_to_ecs.vrl
-│   └── ... (13 more)
+│   ├── alienvault_threat_intelligence_enrichment.vrl  # canonical IOC enrichment example
+│   └── ... (more)
 ├── scripts/
-│   └── test_vrl.sh           # vector wrapper; --lookup-table NAME=PATH.csv / --mmdb-table NAME=PATH.mmdb
+│   ├── test_vrl.sh                  # vector wrapper; --lookup-table NAME=PATH.csv / --mmdb-table NAME=PATH.mmdb
+│   └── list_lookup_tables.sh        # GET /v1/unstable/lookup_table_file/tenant/<id>; --summary / --ioc filters
 └── examples/                 # ready-to-use lookup-table fixtures for the harness
     ├── corporate_cidrs.csv   # CIDR -> classification (corporate / corporate-vpn / datacenter)
     ├── aws_accounts.csv      # account_id -> account_alias / environment / owner_team
@@ -166,3 +169,23 @@ write-vrl/
     ├── test_geoip.mmdb       # 5-network MMDB, IPInfo-Lite-shaped columns
     └── build_test_mmdb.go    # `go run` to regenerate test_geoip.mmdb from the JSONL
 ```
+
+## Pre-flight briefing
+
+Before the first tool call, emit 2-3 lines telling the user what's about to happen. Example:
+
+> Writing a VRL transformation for "<objective>". I'll survey the sample logs, draft the program, and run it through `vector vrl` against the sample (the harness uses a local `vector` binary, no Scanner API access). The program is the deliverable — you paste it into Scanner UI → Library → Transformations.
+
+For IOC enrichment objectives, mention the chain explicitly:
+
+> This is an IOC-enrichment transform. I'll check what IOC lookup tables already exist in your tenant via `scripts/list_lookup_tables.sh --ioc`, base the VRL on `corpus/alienvault_threat_intelligence_enrichment.vrl`, and write matches into `@ecs.threat.enrichments`. After install, downstream detection rules query that field — see `references/ioc_enrichment.md`.
+
+## IOC enrichment objective (the chain)
+
+When the user's objective is **"match logs against threat-intel IOCs and tag matches"** (known-bad IPs, malicious domains, file hashes, URLs), use the canonical chain documented in `references/ioc_enrichment.md`:
+
+1. **Lookup table of IOCs** — synced from a feed (OTX, ThreatFox, CISA KEV, Feodo) via a Scanner UI sync source, or uploaded as CSV via UI (Library → Lookup Tables → +) or the unstable API (`/v1/unstable/lookup_table_file/`).
+2. **VRL enrichment** — this skill's job. Use `corpus/alienvault_threat_intelligence_enrichment.vrl` as the starting template. Populate `@ecs.threat.enrichments[]` per the schema documented in `references/ioc_enrichment.md`.
+3. **Detection rule** — `/write-detection`, querying `@ecs.threat.enrichments` instead of inlining IOCs.
+
+Before drafting, run `scripts/list_lookup_tables.sh --ioc` to see what IOC tables already exist in the tenant. If none match the user's source-type, tell them how to create one (UI path or unstable API — see the docs link in `references/ioc_enrichment.md`).

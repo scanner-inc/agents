@@ -1,0 +1,27 @@
+# schema: https://scanner.dev/schema/scanner-detection-rule.v1.json
+name: Azure AD failed sign-in burst (one of two rules for the credential-stuffing correlation)
+enabled: Staging
+description: |-
+  Detects 10+ failed Azure AD sign-ins for the same userPrincipalName within
+  1 hour. On its own this is a brute-force / credential-stuffing signal.
+
+  This rule is one of TWO that feed the
+  `Credential stuffing followed by anomalous-location success` correlation rule
+  (see `scanner_correlation.yml`). It is tagged
+  `correlation.azure_credential_stuffing` so the correlation rule can join it.
+
+  Severity is intentionally Low — this rule alone is a signal, not a page-worthy
+  alert. The correlation rule promotes it when paired with the second signal.
+severity: Low
+query_text: |-
+  @scnr.source_type="azure:signin"
+  not ResultType="0"
+  | stats count() as failureCount by UserPrincipalName, IPAddress
+  | where failureCount > 10
+time_range_s: 3600
+run_frequency_s: 3600
+tags:
+  - source.azure_signin
+  - tactics.ta0006.credential_access
+  - techniques.t1110.brute_force
+  - correlation.azure_credential_stuffing

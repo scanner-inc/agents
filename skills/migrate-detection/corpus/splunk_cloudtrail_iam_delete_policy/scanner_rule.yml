@@ -1,0 +1,59 @@
+# schema: https://scanner.dev/schema/scanner-detection-rule.v1.json
+name: AWS IAM Delete Policy
+enabled: Staging
+description: |-
+  Detects when an IAM policy is deleted on AWS. Deletion of policies can disrupt
+  access controls and may indicate attacker activity removing audit trails or
+  reducing constraints on attacker-controlled identities. The Splunk version of
+  this rule notes that successful and failed attempts both warrant investigation.
+
+  ## Recommended tuning
+  Tune on `sourceIPAddress` (corporate office / VPN ranges via VRL enrichment),
+  or on least-privilege groups of users — not every user should have IAM-delete
+  permissions in the first place. See `tune-detection` if FPs appear.
+
+  ## References
+  * AWS DeletePolicy API: https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeletePolicy.html
+
+  Migrated from Splunk security_content `aws_iam_delete_policy.yml` (ec3a9362-92fe-11eb-99d0-acde48001122).
+severity: Medium
+query_text: |-
+  @scnr.source_type="aws:cloudtrail"
+  eventName=DeletePolicy
+  not userAgent: ".amazonaws.com"
+  | stats
+      min(@scnr.datetime) as firstTime,
+      max(@scnr.datetime) as lastTime,
+      count() as eventCount,
+      countdistinct(requestParameters.policyArn) as distinctPolicies
+      by sourceIPAddress, eventName, eventSource, recipientAccountId, errorCode, errorMessage, userAgent, eventID, awsRegion, userIdentity.principalId, userIdentity.arn
+time_range_s: 300
+run_frequency_s: 60
+event_sink_keys:
+  - medium_severity_alerts
+tags:
+  - source.cloudtrail
+  - tactics.ta0005.defense_evasion
+  - techniques.t1098.account_manipulation
+alert_template:
+  info:
+    - label: User
+      value: "{{results_table.rows[0].userIdentity.arn}}"
+      use_for_dedup: true
+    - label: Source IP
+      value: "{{results_table.rows[0].sourceIPAddress}}"
+    - label: Region
+      value: "{{results_table.rows[0].awsRegion}}"
+    - label: Error
+      value: "{{results_table.rows[0].errorMessage}}"
+tests:
+  - name: Fires on successful DeletePolicy by an IAM user
+    now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_inline: |
+      {"timestamp":"2026-05-15T00:02:30.000Z","@scnr.source_type":"aws:cloudtrail","eventName":"DeletePolicy","eventSource":"iam.amazonaws.com","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe","principalId":"AIDAEXAMPLE","type":"IAMUser"},"requestParameters":{"policyArn":"arn:aws:iam::123456789012:policy/example-policy"},"sourceIPAddress":"203.0.113.5","awsRegion":"us-east-1","recipientAccountId":"123456789012","userAgent":"aws-cli/2.13.0 Python/3.11.4","eventID":"EXAMPLE-EVENT-ID"}
+    expected_detection_result: true
+  - name: Does not fire on AWS-internal DeletePolicy
+    now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_inline: |
+      {"timestamp":"2026-05-15T00:02:30.000Z","@scnr.source_type":"aws:cloudtrail","eventName":"DeletePolicy","eventSource":"iam.amazonaws.com","userIdentity":{"type":"AWSService","invokedBy":"lambda.amazonaws.com"},"sourceIPAddress":"lambda.amazonaws.com","userAgent":"lambda.amazonaws.com"}
+    expected_detection_result: false

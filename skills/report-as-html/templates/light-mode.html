@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>{{TITLE}}</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --panel: #ffffff;
+    --ink: #14171a;
+    --ink-2: #3b4147;
+    --ink-3: #6b7177;
+    --line: #e6e4dc;
+    --line-2: #d2cfc4;
+    --accent: #1f5d56;
+    --accent-soft: #d8ece8;
+    --accent-2: #2c8377;
+    --green: #2b7a4b;
+    --green-bg: #e3f3e8;
+    --green-line: #b7dec4;
+    --amber: #a26418;
+    --amber-bg: #fbf1dc;
+    --amber-line: #e6cf9d;
+    --red: #a32a2a;
+    --red-bg: #f7e1e1;
+    --red-line: #e0b8b8;
+    --plum: #6b3f7a;
+    --teal: #2d6e8f;
+    --rust: #b35a3b;
+    --olive: #6f7a30;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --serif: ui-serif, Charter, "Iowan Old Style", Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+  body { font-family: var(--sans); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  .page { max-width: 960px; margin: 0 auto; padding: 48px 40px 80px; }
+
+  .doc-header { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 28px; }
+  .eyebrow { text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; color: var(--ink-3); font-weight: 600; }
+  h1.doc-title { font-family: var(--serif); font-size: 30px; line-height: 1.2; margin: 6px 0 0 0; font-weight: 600; letter-spacing: -0.01em; }
+  .doc-title .glyph { color: var(--accent); margin-right: 6px; font-weight: 400; }
+
+  /* Verdict variants: green (good) / amber (attention) / red (bad) */
+  .verdict {
+    margin: 24px 0 28px; border-left: 4px solid var(--green);
+    background: var(--green-bg); border-radius: 0 6px 6px 0;
+    padding: 18px 22px; color: #163a25;
+  }
+  .verdict.amber { border-left-color: var(--amber); background: var(--amber-bg); color: #4a3a14; }
+  .verdict.red   { border-left-color: var(--red);   background: var(--red-bg);   color: #4a1414; }
+  .verdict .badge {
+    display: inline-block; font-family: var(--mono); font-size: 11px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    background: var(--green); color: #fff;
+    padding: 2px 8px; border-radius: 3px; margin-bottom: 8px;
+  }
+  .verdict.amber .badge { background: var(--amber); }
+  .verdict.red   .badge { background: var(--red); }
+  .verdict p { margin: 0; font-size: 16px; line-height: 1.55; }
+  .verdict strong { color: inherit; }
+
+  /* Stat tiles */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 0 0 36px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
+  .stat .num { font-family: var(--serif); font-size: 26px; line-height: 1.1; color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
+  .stat.warn .num { color: var(--amber); }
+  .stat.bad  .num { color: var(--red); }
+  .stat.good .num { color: var(--green); }
+  .stat .lbl { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); margin-top: 4px; }
+
+  section { margin-bottom: 32px; }
+  h2 { font-family: var(--sans); font-size: 13px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent); font-weight: 700; margin: 0 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+
+  code.inline { font-family: var(--mono); font-size: 12.5px; background: #f1efe7; padding: 1px 5px; border-radius: 3px; color: var(--ink); }
+  pre.codeblock { font-family: var(--mono); font-size: 12.5px; background: #f1efe7; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; margin: 6px 0 0; overflow-x: auto; line-height: 1.5; }
+
+  /* Diagram canvas */
+  .diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px; margin-bottom: 14px; }
+  .diagram svg { width: 100%; height: auto; display: block; }
+  .diagram-caption { color: var(--ink-3); font-size: 13px; font-style: italic; margin-top: 4px; }
+
+  /* Data tables */
+  table.data { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  table.data thead th { text-align: left; background: #f1efe7; color: var(--ink-2); font-weight: 600; font-family: var(--sans); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 12px; border-bottom: 1px solid var(--line-2); }
+  table.data thead th.num, table.data tbody td.num { text-align: right; }
+  table.data tbody td { padding: 7px 12px; border-bottom: 1px solid var(--line); color: var(--ink); vertical-align: top; }
+  table.data tbody tr:last-child td { border-bottom: none; }
+  table.data tbody td.note { color: var(--ink-3); font-family: var(--sans); font-size: 13px; }
+
+  /* Bar cells inside tables */
+  .bar-cell { position: relative; min-width: 220px; }
+  .bar-cell .bar { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); height: 6px; border-radius: 3px; background: var(--accent-soft); }
+  .bar-cell .bar-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+
+  /* Top-N numbered cards */
+  ol.top { list-style: none; padding: 0; margin: 0; counter-reset: t; display: grid; gap: 10px; }
+  ol.top > li { counter-increment: t; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 18px 14px 56px; position: relative; }
+  ol.top > li::before { content: counter(t); position: absolute; left: 14px; top: 14px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--serif); font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; }
+  ol.top .title { font-weight: 600; color: var(--ink); margin-bottom: 4px; font-size: 15px; }
+  ol.top .desc { color: var(--ink-2); font-size: 14px; margin-bottom: 8px; }
+
+  /* Command rows */
+  .cmd { font-family: var(--mono); font-size: 12.5px; background: #f6f4eb; border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; color: var(--ink-2); overflow-x: auto; white-space: nowrap; }
+  .cmd .arr { color: var(--ink-3); margin-right: 6px; }
+  .cmd .skill { color: var(--accent); font-weight: 600; margin-right: 6px; }
+  .cmd.ui { color: var(--amber); background: var(--amber-bg); border-color: var(--amber-line); }
+  .cmd.ui a { color: var(--amber); }
+  .cmd a { color: inherit; text-decoration: underline; }
+
+  /* Track entry cards (severity-coded left border) */
+  ul.track { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  ul.track > li { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--line-2); border-radius: 6px; padding: 14px 16px; }
+  ul.track > li.sev-critical { border-left-color: var(--red); }
+  ul.track > li.sev-high     { border-left-color: var(--red); }
+  ul.track > li.sev-medium   { border-left-color: var(--amber); }
+  ul.track > li.sev-low      { border-left-color: var(--olive); }
+  ul.track > li.sev-info     { border-left-color: var(--teal); }
+  ul.track > li.sev-corr     { border-left-color: var(--green); }
+  ul.track > li.sev-pack     { border-left-color: var(--plum); }
+  .entry-title { font-weight: 600; color: var(--ink); font-size: 15px; margin-bottom: 4px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--ink-3); margin: 4px 0 8px; }
+  .pill { display: inline-block; padding: 1px 7px; border-radius: 999px; background: #f1efe7; border: 1px solid var(--line); }
+  .pill.source { color: var(--accent); border-color: var(--accent-soft); background: var(--accent-soft); }
+  .pill.tag    { color: var(--plum); border-color: #ddd0e3; background: #f3eaf7; }
+  .pill.fires  { color: var(--amber); border-color: var(--amber-line); background: var(--amber-bg); }
+  .pill.regime { color: var(--teal); border-color: #cee0ea; background: #e8f1f7; }
+  .pill.sev    { color: var(--red); border-color: var(--red-line); background: var(--red-bg); }
+  .body       { color: var(--ink-2); font-size: 14px; margin: 4px 0 8px; }
+  .body strong { color: var(--ink); }
+
+  /* Coverage matrix */
+  table.matrix { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  table.matrix thead th { text-align: center; background: #f1efe7; color: var(--ink-2); font-weight: 600; font-family: var(--sans); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 10px; border-bottom: 1px solid var(--line-2); }
+  table.matrix thead th.tac { text-align: left; }
+  table.matrix tbody td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: center; color: var(--ink); }
+  table.matrix tbody td.tac { text-align: left; font-family: var(--mono); color: var(--ink-2); }
+  table.matrix tbody tr:last-child td { border-bottom: none; }
+  td.cov-0  { color: var(--ink-3); background: #fbfaf5; }
+  td.cov-lo { background: #f7f2e1; color: var(--amber); font-weight: 600; }
+  td.cov-md { background: #eef3df; color: var(--olive); font-weight: 600; }
+  td.cov-hi { background: var(--green-bg); color: var(--green); font-weight: 700; }
+  .matrix-note { color: var(--ink-3); font-size: 13px; font-style: italic; margin-top: 6px; }
+  .matrix-note strong { color: var(--ink); font-style: normal; }
+
+  ul.bullets { margin: 0; padding-left: 22px; }
+  ul.bullets li { margin-bottom: 10px; line-height: 1.55; color: var(--ink); }
+  ul.bullets li:last-child { margin-bottom: 0; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .row2 { grid-template-columns: 1fr; }
+  }
+
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 12px; font-family: var(--mono); display: flex; justify-content: space-between; }
+
+  @media print {
+    body { background: #fff; font-size: 11pt; }
+    .page { padding: 0; max-width: none; }
+    .verdict, .stats, .diagram, table.data, table.matrix, ol.top > li, ul.track > li { break-inside: avoid; }
+    h2 { break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header class="doc-header">
+    <div class="eyebrow">{{EYEBROW}}</div>
+    <h1 class="doc-title"><span class="glyph">{{GLYPH}}</span>{{TITLE}}</h1>
+  </header>
+
+  {{CONTENT}}
+
+  <footer>
+    <span>{{SKILL_NAME}}</span>
+    <span>{{FOOTER_META}}</span>
+  </footer>
+
+</main>
+</body>
+</html>
