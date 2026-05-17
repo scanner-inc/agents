@@ -6,21 +6,10 @@ description: |-
   CreateAccessKey) originating from source IPs that are NOT in the corporate
   CIDR ranges.
 
-  ## Dependency: VRL enrichment
-  This rule reads the custom field `source.classification`, which is added at
-  ingest time by the `corporate_cidrs_classification` VRL transformation (see
-  `enrich.vrl` in this corpus directory). The matching CIDR description (when
-  applicable) lands in `source.classification_description`.
-
-  **Before activating this rule, install the VRL transformation in Scanner UI:**
-  1. Library → Lookup Tables → + button. Create lookup table `corporate_cidrs`,
-     upload `lookup_corporate_cidrs.csv` (or your real version). (Lookup Tables
-     API is also available — beta, unstable; see
-     https://docs.scanner.dev/scanner/using-scanner-complete-feature-reference/unstable/lookup-tables.)
-  2. Library → Transformations: create a new custom transformation from
-     `enrich.vrl`. Then in Collect → Index Rules for the `aws:cloudtrail`
-     source, add the transformation under the Transform & Enrich steps.
-  3. Wait one ingestion cycle so the field exists in indexed data.
+  ## Dependency
+  Reads the custom field `source.classification` (added at ingest time
+  by the `corporate_cidrs_classification` VRL transformation in this
+  directory). Optional companion field: `source.classification_description`.
 
   ## False Positives
   * Admin activity from AWS CloudShell or other AWS-controlled IP ranges

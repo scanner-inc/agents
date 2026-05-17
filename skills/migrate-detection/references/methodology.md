@@ -120,15 +120,26 @@ If the source rule references one of these, **the migrated Scanner rule alone is
 > *4. Wait for the next ingestion cycle so the field exists in indexed data.*
 > *5. Then push the migrated rule, which consumes `<enriched_field>`.*"
 
-Document the dependency in the migrated rule's `description`:
+Document the dependency in the migrated rule's `description` as a short
+**field-level note only** — say which field is read and which VRL
+produces it. That's it:
 
 ```yaml
 description: |-
   ...
-  Dependency: this rule reads the enriched field `source.classification`
-  (added by VRL transformation `cidr_classification_v1`). Install the
-  transformation before activating this rule.
+  ## Dependency
+  Reads the enriched field `source.classification` (added by VRL
+  transformation `cidr_classification_v1`).
 ```
+
+**Do NOT** put install procedures, UI navigation paths, lookup-table
+upload steps, or "wait one ingestion cycle / promote to Active"
+checklists into the YAML description. Those rot inside the file (UI
+paths change, beta APIs stabilize, install order shifts) and they
+clutter what the rule is *for*. Surface install / activation steps in
+the chat output the user reads at migration time — that's where they
+belong, ephemerally. The YAML should explain only what the rule
+detects, the dependency, false positives, and triage.
 
 ### Field namespace for enrichment output
 
