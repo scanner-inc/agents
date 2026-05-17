@@ -22,7 +22,7 @@ Scanner can't express this in one rule — it doesn't have cross-table or cross-
 | Sentinel KQL component | Scanner rule |
 |---|---|
 | `recentFailures` sub-query | `scanner_rule_part_a_failed_burst.yml` (Low signal, tagged `correlation.azure_credential_stuffing`) |
-| `userHistoricalCountries` + `!in` check | A VRL transformation `azure_signin_anomalous_country` that maintains a per-user 30-day country set in an enrichment table, plus `scanner_rule_part_b_anomalous_location.yml` which filters on the resulting `@enrichment.user_country_is_anomalous="true"` (also Low signal, tagged `correlation.azure_credential_stuffing`) |
+| `userHistoricalCountries` + `!in` check | A VRL transformation `azure_signin_anomalous_country` that maintains a per-user 30-day country set in a Scanner lookup table, plus `scanner_rule_part_b_anomalous_location.yml` which filters on the resulting `user.country_is_anomalous="true"` (also Low signal, tagged `correlation.azure_credential_stuffing`) |
 | The `join` itself + the final detection | `scanner_correlation.yml` (High) joining the two signals via `tags[*]:correlation.azure_credential_stuffing` on the shared `UserPrincipalName` entity |
 
 ## Trade-offs vs the original

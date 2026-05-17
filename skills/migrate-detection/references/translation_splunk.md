@@ -91,7 +91,10 @@ Scanner:  ...
 Splunk:   ... | lookup corporate_cidrs cidr OUTPUT classification | where isnull(classification)
 Scanner:  Requires ingest-time enrichment. Hand off to /write-vrl.
           Migrated rule consumes the enriched field:
-          ... and not @enrichment.cidr_classification:"corporate"
+          ... and not source.classification:"corporate"
+          (See methodology.md "Field namespace for enrichment output" for
+           choosing the enriched field path — prefer @ecs.* when there's
+           a real mapping, else customer's schema, else a plain custom field.)
 ```
 
 ## Severity mapping

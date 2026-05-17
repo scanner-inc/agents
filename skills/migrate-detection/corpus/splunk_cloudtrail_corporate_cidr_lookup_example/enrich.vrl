@@ -1,14 +1,17 @@
 # Scanner ingest-time enrichment that tags each CloudTrail event with a
-# `@enrichment.ip_classification` field based on the source IP's membership in
-# the corporate_cidrs lookup table.
+# `source.classification` field based on the source IP's membership in the
+# corporate_cidrs lookup table.
 #
 # Install in the Scanner UI:
-#   1. Settings → Transformations → New Transformation
-#   2. Paste this VRL.
-#   3. Settings → Enrichment Tables → New Lookup Table
-#   4. Name: `corporate_cidrs`, columns: `cidr`, `classification`, `description`.
-#   5. Upload `lookup_corporate_cidrs.csv` (or your real version).
-#   6. Bind the transformation to your `aws:cloudtrail` ingest pipeline.
+#   1. Library → Lookup Tables → + button
+#      Name: `corporate_cidrs`, columns: `cidr`, `classification`, `description`.
+#      Upload `lookup_corporate_cidrs.csv` (or your real version).
+#      (Lookup Tables API is also available — beta, unstable; see
+#       https://docs.scanner.dev/scanner/using-scanner-complete-feature-reference/unstable/lookup-tables)
+#   2. Library → Transformations
+#      Create a new custom transformation from this VRL. Then in
+#      Collect → Index Rules for the `aws:cloudtrail` source, add the
+#      transformation under the Transform & Enrich steps.
 
 src_ip = .sourceIPAddress
 if !is_nullish(src_ip) {
@@ -19,13 +22,13 @@ if !is_nullish(src_ip) {
     select: ["classification", "description"]
   )
   if err == null && length(classification) > 0 {
-    .@enrichment.ip_classification = classification[0].classification
-    .@enrichment.ip_classification_description = classification[0].description
+    .source.classification = classification[0].classification
+    .source.classification_description = classification[0].description
   } else {
-    .@enrichment.ip_classification = "non_corporate"
+    .source.classification = "non_corporate"
   }
 } else {
-  .@enrichment.ip_classification = "unknown"
+  .source.classification = "unknown"
 }
 
 .

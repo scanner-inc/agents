@@ -111,7 +111,7 @@ if not re.search(r"admin|root", event.get("userIdentity", {}).get("userName", ""
 
 If the regex is more complex (capture groups, character classes), the translation is no longer 1:1. Options:
 - Approximate with token-matches and accept the lower precision.
-- Hand off to `/write-vrl` to add a derived field at ingest (e.g., `@enrichment.is_privileged_user`) and filter on that.
+- Hand off to `/write-vrl` to add a derived field at ingest (e.g., `user.is_privileged`, or `@ecs.user.roles` if that fits) and filter on that. See methodology.md "Field namespace for enrichment output" for choosing the path.
 
 ### Pattern: numeric thresholds
 

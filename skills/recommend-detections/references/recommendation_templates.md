@@ -88,13 +88,13 @@ Up to 10 entries, ranked by priority. Each:
 Example:
 ```
 - **Detect Okta admin role grants from non-corporate IPs** · `source.okta` · `techniques.t1098.account_manipulation`
-  Filter sketch: `@scnr.source_type="okta" eventType="user.account.privilege.grant" @enrichment.ip_classification="non_corporate"`
+  Filter sketch: `@scnr.source_type="okta" eventType="user.account.privilege.grant" source.classification="non_corporate"`
   Backtest regime: needle-in-haystack (admin grants are rare)
   Rationale: Okta is ingesting 8k events/day but has zero rules covering account manipulation; this would catch attacker pivots after credential theft.
   → `/write-detection write a rule for Okta admin role grants from non-corporate IPs`
 ```
 
-If the user doesn't have an `@enrichment.<field>` available, drop it from the sketch and mention the dependency in the rationale, with a hint to invoke `/write-vrl`.
+If the user doesn't have a custom enrichment field available (e.g., `source.classification`, `principal.account.class`, or an `@ecs.*` equivalent), drop it from the sketch and mention the dependency in the rationale, with a hint to invoke `/write-vrl`.
 
 ## `🔧 Tuning opportunities (Track B)` template
 

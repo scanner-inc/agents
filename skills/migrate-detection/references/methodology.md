@@ -115,19 +115,47 @@ If the source rule references one of these, **the migrated Scanner rule alone is
 
 > Hand-off message: *"This rule depends on `<lookup name>`. Scanner enriches at ingest, not query time. Before this rule will fire correctly, you need to:*
 > *1. Invoke `/write-vrl` with your lookup CSV/MMDB to author a transformation that adds `<enriched_field>`.*
-> *2. Install the transformation in the Scanner UI (Settings → Transformations).*
-> *3. Wait for the next ingestion cycle so the field exists in indexed data.*
-> *4. Then push the migrated rule, which consumes `<enriched_field>`.*"
+> *2. Upload the lookup table in the Scanner UI under Library → Lookup Tables. (Or use the beta Lookup Tables API: https://docs.scanner.dev/scanner/using-scanner-complete-feature-reference/unstable/lookup-tables.)*
+> *3. Create the custom transformation in the Scanner UI under Library → Transformations. Then in Collect → Index Rules for the relevant source, add the transformation under the Transform & Enrich steps.*
+> *4. Wait for the next ingestion cycle so the field exists in indexed data.*
+> *5. Then push the migrated rule, which consumes `<enriched_field>`.*"
 
 Document the dependency in the migrated rule's `description`:
 
 ```yaml
 description: |-
   ...
-  Dependency: this rule reads the enriched field `@enrichment.ip_classification`
+  Dependency: this rule reads the enriched field `source.classification`
   (added by VRL transformation `cidr_classification_v1`). Install the
   transformation before activating this rule.
 ```
+
+### Field namespace for enrichment output
+
+When the VRL writes an enriched field, choose the target in this order:
+
+1. **`@ecs.*` if there's a real ECS mapping** for the concept. Examples:
+   `@ecs.source.geo.country_name` for GeoIP lookup, `@ecs.user.roles` for
+   role enrichment, `@ecs.threat.indicator.type` for threat-intel hits.
+   Read the field's real shape from ECS docs or existing tenant data; do
+   not invent fake ECS paths.
+
+2. **The customer's own custom schema, if they have one.** Many tenants
+   have an internal convention they've already standardised on. Ask once
+   per session — *"do you have a preferred field namespace for ingest-time
+   enrichments?"* — and follow whatever they say.
+
+3. **A new plain custom field** when neither of the above applies. Mirror
+   the schema concept it describes — `principal.account.class`,
+   `source.classification`, `user.is_privileged`.
+
+`@scnr.*` is Scanner-internal and off-limits.
+
+If the customer doesn't have an existing schema and asks what to use,
+first look for a natural ECS home for the concept — many enrichment use
+cases map cleanly (`@ecs.source.geo.*` for IP geolocation,
+`@ecs.related.*` for joinable identifiers, `@ecs.threat.*` for IOC
+matches). Only fall back to a plain custom field when no ECS path fits.
 
 ## Phase 7: Map severity, tags, MITRE
 

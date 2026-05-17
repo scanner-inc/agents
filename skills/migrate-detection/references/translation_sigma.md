@@ -78,7 +78,7 @@ not sourceIPAddress: "10."
 
 Note: Scanner doesn't have native CIDR matching at query time. Options:
 - Token-match on the CIDR prefix (`sourceIPAddress: "10."` matches `10.x.x.x` as the leading token). Fragile but works for /8.
-- For arbitrary CIDRs, hand off to `/write-vrl` to add an `@enrichment.cidr_classification` field at ingest, then filter on that.
+- For arbitrary CIDRs, hand off to `/write-vrl` to add a classification field at ingest (e.g., `source.classification`, or `@ecs.network.type` if it fits), then filter on that. See methodology.md "Field namespace for enrichment output" for choosing the path.
 
 ### Multiple selections (and/or)
 

@@ -81,7 +81,7 @@ The Scanner GitHub app watches `main` and syncs on green. Never recommend `scann
 
 > 1. Commit the migrated YAMLs to your detection-rules repo.
 > 2. Push to `main` (or open a PR and merge).
-> 3. For VRL-dependent rules: separately install the VRL transformation in the Scanner UI (Settings → Transformations) so the enriched field exists by the time the rule queries it.
+> 3. For VRL-dependent rules: separately install the VRL transformation in the Scanner UI under Library → Transformations so the enriched field exists by the time the rule queries it. Lookup tables go under Library → Lookup Tables (or via the beta Lookup Tables API: https://docs.scanner.dev/scanner/using-scanner-complete-feature-reference/unstable/lookup-tables).
 > 4. The GitHub app validates and syncs.
 > 5. The rules start in `Staging`. Watch `_detections` for a few days, then promote individually to `Active`.
 
