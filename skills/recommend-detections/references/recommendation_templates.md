@@ -96,6 +96,28 @@ Example:
 
 If the user doesn't have a custom enrichment field available (e.g., `source.classification`, `principal.account.class`, or an `@ecs.*` equivalent), drop it from the sketch and mention the dependency in the rationale, with a hint to invoke `/write-vrl`.
 
+### IOC-based Track A entries
+
+For any IOC-matching idea (CloudTrail C2, DNS-to-malicious-domain, VPC-flow to known-bad IP, file-hash watchlist), emit the chain explicitly instead of an inline IOC list:
+
+```
+- **<Behaviour description>** · `source.<slug>` · `<technique tag>` · **IOC chain**
+  Available lookup tables (from `list_lookup_tables.sh --ioc`):
+    `<table-name>` [<source> · <indicator_type> · <connected|DISCONNECTED>] (<N> rows)   ← synced
+    `<table-name>` [uploaded · heuristic match] (<N> rows)                              ← uploaded
+    (or: "none — see Stage 1 below")
+  Stage 1: <pick existing IOC lookup table | upload one — Library → Lookup Tables → + or via /v1/unstable/lookup_table_file/>
+  Stage 2: `/write-vrl` to enrich `<source field, e.g. @ecs.source.ip>` into `@ecs.threat.enrichments[]`
+  Stage 3: `/write-detection` querying `@ecs.threat.enrichments[*].indicator.type:"<type>"`
+  Rationale: <one line>
+  → `/write-vrl write a VRL that enriches <field> against the <table-name> IOC lookup table, populating @ecs.threat.enrichments`
+  → `/write-detection write a rule for <source> events where @ecs.threat.enrichments[*].indicator.provider:"<provider>"`
+```
+
+Prefer synced tables (`sync_source.ThreatIntel` populated) when one matches the indicator type your detection needs — they refresh automatically and the `indicator_type` is canonical STIX (saves you guessing the join field).
+
+The chain is **default**, not optional — never recommend inline IOC matching in the rule body for IOC-style behaviours. See `write-vrl/references/ioc_enrichment.md` for the full schema.
+
 ## `🔧 Tuning opportunities (Track B)` template
 
 Up to 5 entries. Each:

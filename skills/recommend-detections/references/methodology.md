@@ -84,7 +84,12 @@ For the top 30 rules by fire-count, also query:
 
 …to see whether the rule is firing on many distinct entities (probably real signal) or few entities repeatedly (probably noise candidate).
 
-Pull rules that **never fired in 30 days** — these are "zombies" worth either retiring or tuning. The skill surfaces these as Track B (tuning) candidates.
+Note rules that have **never fired in 30 days**, but do *not* treat fire-count alone as a problem signal — many of the most valuable rules (root account use, MFA disabled, S3 bucket made public, etc.) are rare-event rules that *should* never fire. Surface a never-fired rule as a Track B candidate only when there's a concrete mismatch signal:
+
+- The rule's `%ingest.source_type` / `@scnr.source_type` filter references a source-type the tenant **does not** ingest (clear breakage — recommend deletion or re-mapping).
+- The rule's filter references `eventName` / `action` values that are common in the tenant's actual data (verify by sampling) but the rule still hasn't fired — suggests a field-path bug. Require evidence before claiming this.
+
+If there's no specific evidence of breakage, leave never-fired rules alone. Do not list them in bulk; do not call them "zombies", "stale", or "broken". If the user wants to dig deeper, point them at `/investigate`.
 
 For co-firing patterns:
 
@@ -153,12 +158,14 @@ For each rule in the top firers list at **Medium+ severity** and >10 fires/day:
   → `/tune-detection <rule name or id>`
 ```
 
-Also include zombie rules (never fired or 90+ days stale):
+Optionally include rules with a concrete mismatch signal (filter references a source-type the tenant doesn't ingest, or a field path that doesn't exist in real events):
 
 ```
-- **`<rule name>`** has never fired in 30d — possibly broken filter or wrong source
+- **`<rule name>`** — filter references `%ingest.source_type=<x>` but tenant ingests no `<x>` data; re-map or delete
   → `/tune-detection <rule name>`
 ```
+
+Do **not** list rules just because they haven't fired. No "zombie" framing. Rare-but-important rules are healthy.
 
 Don't suggest tuning Low / Informational rules unless their noise is overwhelming — they're signals, noise is expected.
 
@@ -194,6 +201,23 @@ For each ingested source-type in the tenant (from `get_scanner_context.source_ty
 
 Don't surface a pack if any of its rules already appear in the user's local corpus (suggests they cloned-and-disabled the OOB version intentionally). Don't surface a pack for a source-type the user doesn't ingest.
 
+## Phase 7: IOC lookup-table discovery (drives Track A IOC-based recommendations)
+
+Before drafting any Track A recommendations that involve IOC matching (CloudTrail C2, DNS-to-malicious-domain, VPC-flow to known-bad, file-hash matches), discover what IOC lookup tables already exist in the tenant:
+
+```bash
+../write-vrl/scripts/list_lookup_tables.sh --ioc
+```
+
+The script returns IOC lookup tables in two categories: **synced** (tables with `sync_source.ThreatIntel` populated — definitive — these refresh automatically from feeds like AlienVault OTX, ThreatFox, Feodo) and **uploaded** (CSVs whose name/description hints at IOCs — heuristic fallback). The output annotates each with its source, indicator type (`ipv4-addr` / `domain-name` / `url` / `file-hash-md5`/`-sha1`/`-sha256` / etc.), and connection status. Prefer synced tables when recommending the chain — the indicator type is canonical, so you know exactly which field to join on. If the unstable API isn't enabled on this deployment, the script exits with a clear message — skip the step and tell the user to check Library → Lookup Tables in the UI.
+
+**Use the results in Track A IOC recommendations:**
+
+- If an IOC table for the relevant log source already exists: surface it in the recommendation and route through the chain (`/write-vrl` to enrich, then `/write-detection` to consume `@ecs.threat.enrichments`).
+- If no IOC table exists: include a "step 0" in the recommendation that tells the user to create one (sync source from a public feed, or upload a CSV). Cite the unstable API docs (`https://docs.scanner.dev/scanner/using-scanner-complete-feature-reference/unstable/lookup-tables`) and the UI path (Library → Lookup Tables → +).
+
+The chain is the **default path** for IOC-based detections — never recommend inline IOC matching in the rule body for IOC-style behaviours. See `write-vrl/references/ioc_enrichment.md` for the full pattern.
+
 ## Phase 8: Render and hand off
 
 Apply the template in `references/recommendation_templates.md`. Trim sections that have nothing to recommend (don't emit empty headings).
@@ -212,5 +236,7 @@ The skill writes nothing. After emitting the report, the conversation is done. T
 - Are the Top 5 truly the 5 most impactful, or did I just take the first item from each track? Picking the right 5 requires actual judgment.
 - Did I include the GitHub URLs for OOB packs? (Users need them to enable.)
 - Did I trim empty sections?
+- Did I avoid the "zombie rules" framing? Never-fired rules are not a problem signal on their own — only flag ones with concrete evidence of breakage (source-type filter doesn't match ingested data, etc.).
+- For Track A IOC-based ideas: did I route them through the lookup-table → VRL → detection chain (cite `write-vrl/references/ioc_enrichment.md`)? Did I list available IOC tables from `list_lookup_tables.sh --ioc` instead of imagining inline IOC matches?
 
 Fix and re-emit.

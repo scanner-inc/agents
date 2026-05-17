@@ -31,7 +31,7 @@ Follow the full procedure in `references/methodology.md`. The short version:
 3. **Active firing data.** Query `_detections` over the last 30 days, grouped by rule `name` × `severity`. This reveals:
    - **Noise candidates** — top firers, especially at Medium+ severity (Track B candidates).
    - **Co-firing entities** — multiple distinct rule names firing on the same entity (`results_table.rows[0].userIdentity.arn` etc.) — Track C candidates.
-   - **Zombie rules** — never-fired or last-fired-90d+-ago.
+   - **Concrete-mismatch suspects** — rules whose `%ingest.source_type` filter doesn't match any actually-ingested source. Surface these in Track B. Do **not** flag rules just because they haven't fired — many of the most valuable rules are rare-event rules that should never fire.
 
 4. **Build coverage matrix.**
    - Rows: MITRE tactics × techniques (canonical IDs from `references/mitre_tags.md`).
@@ -107,3 +107,19 @@ recommend-detections/
     ├── oob_packs.md                  # hardcoded list of scanner-inc/detection-rules-* packs (no local clone needed)
     └── mitre_tags.md                 # canonical Scanner-supported MITRE tags
 ```
+
+## Pre-flight briefing
+
+This is one of the longer-running skills. Before the first tool call, emit 3-4 lines telling the user what's about to happen. Example:
+
+> Building detection-engineering recommendations. I'll: snapshot posture via Scanner MCP, walk every YAML in `SCANNER_DETECTIONS_DIR`, pull the API rule inventory (catches UI-created rules too), query 30d of `_detections` for noise + co-firing patterns, list available IOC lookup tables via `../write-vrl/scripts/list_lookup_tables.sh`, and check which `scanner-inc/detection-rules-*` OOB packs match your ingested sources. Read-only. ~30-60s.
+
+If `SCANNER_DETECTIONS_DIR` is unset, mention it and ask the user before walking nothing locally.
+
+## After emitting the report
+
+After the recommendations are emitted, ask the user:
+
+> Want this as an HTML report?
+
+If yes, invoke `/report-as-html` with the report content and the slug `scanner-recommendations-<YYYY-MM-DD>`. The renderer asks separately about opening in the browser. See `../report-as-html/SKILL.md` for the contract.

@@ -66,6 +66,30 @@ If the rule needs query-time enrichment Scanner can't do natively — CIDR membe
 
 Document the dependency in the rule's `description` so reviewers see it.
 
+## IOC-based rules — the lookup-table → VRL → detection chain (default)
+
+If the behaviour the user wants to catch is **"match logs against threat-intel IOCs"** — known-bad IPs, malicious domains, CVE-tagged hashes, C2 indicators, malware-family URLs — do **not** inline the IOC list in the rule body. The default path is the three-stage chain:
+
+1. **Lookup table of IOCs.** Either synced from a feed (AlienVault OTX, ThreatFox, CISA KEV, Feodo) via a Scanner UI sync source, or uploaded as a CSV (UI: Library → Lookup Tables → +, or the unstable API).
+   - **First**, list what's already available: `../write-vrl/scripts/list_lookup_tables.sh --ioc` returns IOC-flavored tables already in the tenant. If a relevant one exists, point at it.
+   - If none exist, tell the user how to create one (UI path or the unstable `/v1/unstable/lookup_table_file/` API — see `https://docs.scanner.dev/scanner/using-scanner-complete-feature-reference/unstable/lookup-tables`).
+2. **VRL enrichment** (`/write-vrl`): joins the log's relevant field (`@ecs.source.ip`, `@ecs.destination.domain`, `@ecs.file.hash.sha256`, etc.) against the lookup table at ingest time, writing matches into the `@ecs.threat.enrichments` array. Canonical example: `~/src/log-storage/transform/transform_lib/vrl_programs/alienvault_threat_intelligence_enrichment.vrl`.
+3. **Detection rule** (this skill): queries `@ecs.threat.enrichments`, not the raw IOC list. The rule body stays small and stable; rotating the IOCs is a lookup-table refresh, not a rule re-deploy.
+
+Example detection rule body for an enriched event:
+
+```
+%ingest.source_type:aws:cloudtrail
+@ecs.threat.enrichments[*].indicator.type:"ipv4-addr"
+@ecs.threat.enrichments[*].indicator.provider:"alienvault-otx"
+```
+
+When the user invokes `/write-detection` for an IOC behaviour and the prerequisite VRL doesn't exist yet, **stop and route to `/write-vrl` first**:
+
+> This is an IOC-based rule, so the standard chain is: lookup table → VRL enrichment → detection rule on `@ecs.threat.enrichments`. I can see the following IOC lookup tables in your tenant: `<list from list_lookup_tables.sh --ioc>`. Pick one (or upload a new one in the Scanner UI), then run `/write-vrl` to author the enrichment, then come back to `/write-detection` and we'll consume the enriched field.
+
+Document the chain dependency in the rule's `description`.
+
 ## Severity-and-staging defaults (always)
 
 - New rules are written with `enabled: Staging`.
@@ -100,3 +124,11 @@ write-detection/
     ├── backtesting.md                # needle-in-haystack vs broad-filter regime guidance
     └── mitre_tags.md                 # canonical Scanner-supported MITRE tags
 ```
+
+## Pre-flight briefing
+
+Before the first tool call, emit 2-3 lines telling the user what's about to happen. Include the destination path explicitly — pre-flight is the user's chance to redirect before a write. Example:
+
+> Authoring a new detection rule for "<one-line behavior summary>". I'll discover the source-type schema, sanity-check the filter against real data, draft the YAML at `<SCANNER_DETECTIONS_DIR>/<source>/<slug>.yml`, seed inline tests, validate with `scanner-cli`, and backtest. Always starts in `Staging`. ~30-90s.
+
+If the behaviour is IOC-based and there's no prerequisite VRL enrichment yet, surface the chain redirect (lookup table → `/write-vrl` → `/write-detection`) before drafting anything.

@@ -67,3 +67,15 @@ The fan-out script is the primary entrypoint, but the per-source scripts are usa
 - `scripts/threatfox.sh <ioc>` — POST to ThreatFox `search_ioc`.
 - `scripts/otx.sh <type> <value>` — direct OTX indicator lookup (`<type>` is one of IPv4, IPv6, domain, hostname, url, file, cve — case-sensitive).
 - `scripts/feodo.sh <ip>` — IPv4-only Feodo blocklist check.
+
+## Pre-flight briefing
+
+This skill is fast (3-source fan-out in parallel, usually <5s) — keep the pre-flight to one line:
+
+> Checking `<indicator>` across ThreatFox + OTX + Feodo in parallel. ~5s.
+
+## After emitting the report
+
+For a single-IOC lookup, the verdict is usually 2-5 lines — **don't offer HTML** unless the user explicitly asks. When this skill is called as a sub-step by `/triage-alert`, `/threat-hunt`, or `/investigate`, the parent skill handles any HTML offer at the end of its own report.
+
+If the user explicitly says "make that an HTML report", invoke `/report-as-html` with slug `ioc-<indicator-slug>-<YYYY-MM-DD>`.

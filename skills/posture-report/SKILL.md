@@ -43,7 +43,7 @@ The report goes to the terminal as plain markdown. Use this exact structure; tri
 ````
 📊 Scanner Daily Posture — <YYYY-MM-DD>
 
-> <One-line headline verdict in plain English. Lead with the actionable alert count first if any are present (that's what determines whether someone gets paged); otherwise lead with the dominant data/coverage story. e.g. "0 actionable alerts in the 24h window; ingestion healthy, but 4 of 14 MITRE tactics uncovered and 55 zombie rules need a tuning review.">
+> <One-line headline verdict in plain English. Lead with the actionable alert count first if any are present (that's what determines whether someone gets paged); otherwise lead with the dominant data/coverage story. e.g. "0 actionable alerts in the 24h window; ingestion healthy, but 4 of 14 MITRE tactics uncovered.">
 
 ## Environment
 <N> active · <N> staging · <N> paused · MITRE <N>/14 tactics · ~<N> techniques
@@ -72,7 +72,7 @@ Top firers (24h):
 ## Coverage Gaps
 - <Each source with volume but no rules — one bullet per source, with the volume and the missing rule category, e.g. "aws:ecs — 212M events/day, zero ECS container-runtime rules">
 - <MITRE tactics with zero or near-zero coverage, cited by canonical tag, e.g. "Zero rules: `tactics.ta0043.reconnaissance`, `tactics.ta0011.command_and_control`. Single rule only: `tactics.ta0008.lateral_movement`, `tactics.ta0009.collection`">
-- <Zombie rules — never fired or last fired >90d ago — count plus one-line characterization, e.g. "55 zombie rules, heavily CloudTrail-focused, worth a tuning review">
+- <Rules with concrete-mismatch suspicion (filter references a `%ingest.source_type` you don't ingest, etc.) — count plus one-line characterization. Do **not** flag rules just because they haven't fired; many of the most valuable rules are rare-event rules that should never fire.>
 
 ## Recommended next moves
 (based on 90-day rule activity)
@@ -88,3 +88,19 @@ Top firers (24h):
 Cite MITRE IDs by canonical tag (`tactics.ta0011.command_and_control`, `techniques.t1568.dynamic_resolution`), not display name. Cite log sources by slug (`aws-cloudtrail`, `okta`).
 
 Begin the response with the `📊` line; end with the final *Recommended next moves* bullet (or with the *Coverage Gaps* section if no actionable next moves exist). No preamble, no trailing commentary.
+
+## Pre-flight briefing
+
+Before the first tool call, emit 2-3 lines telling the user what's about to happen. Keep it short. Example:
+
+> Pulling your Scanner posture — environment via MCP, rule inventory via the Detection Rules API, 24h alerts and log-volume from `_detections` and source-type aggregates. Read-only. ~20s.
+
+This skill has no writes. Then run the workflow.
+
+## After emitting the report
+
+After the terminal report is complete, ask the user:
+
+> Want this as an HTML report?
+
+If yes, invoke `/report-as-html` with the report content and the slug `posture-report-<YYYY-MM-DD>`. The renderer will ask separately whether to open the file in the browser — don't fuse the two prompts. See `../report-as-html/SKILL.md` for the contract.

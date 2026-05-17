@@ -66,3 +66,19 @@ If the question is small ("did this user log in today?"), the answer should be s
 - Scanner MCP configured in Claude Code.
 - For Detection Rules REST API questions: `SCANNER_API_URL`, `SCANNER_API_KEY`. (Not needed for log-only questions.)
 - For IOC enrichment: `OTX_API_KEY`, `ABUSECH_AUTH_KEY` — degrades gracefully if absent.
+
+## Pre-flight briefing
+
+Before the first tool call, emit 2 lines telling the user what's about to happen. Example:
+
+> Investigating: "<one-line restatement>". I'll discover the relevant schema, draft a 3-6 bullet plan, then run it against Scanner MCP. Read-only. ~20-40s depending on data volume.
+
+If the question is ambiguous, ask one clarifying question instead of running the plan blindly.
+
+## After emitting the finding
+
+For multi-section findings, ask:
+
+> Want this as an HTML report?
+
+If yes, invoke `/report-as-html` with a short slug derived from the question (e.g. `investigate-okta-failed-logins-<YYYY-MM-DD>`). Skip the prompt entirely for one-paragraph findings — HTML rendering is overkill for "yes, user X logged in at 09:14 from IP Y".

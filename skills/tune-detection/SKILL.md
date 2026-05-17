@@ -94,3 +94,11 @@ tune-detection/
     ├── list_detection_rules.sh       # page through GET /v1/detection_rule
     └── fetch_detection_rule.sh       # find one rule by --name or --id, emit JSON
 ```
+
+## Pre-flight briefing
+
+Before the first tool call, emit 2-3 lines telling the user what's about to happen. Include the destination path if the rule is going to be modified. Example:
+
+> Tuning `<rule name>`. I'll locate the YAML (local repo / OOB pack / Scanner UI), pull recent firings from `_detections`, sample underlying events, classify FP/TP, propose the smallest filter or threshold change that removes the FPs, add a regression test, validate, and backtest the new fire-rate. Writes to: `<path>`. ~30-90s.
+
+If the rule turns out to be an OOB rule, mention the fork-and-disable workflow up front so the user knows the destination changes from "edit in place" to "clone into your private repo + disable in UI".

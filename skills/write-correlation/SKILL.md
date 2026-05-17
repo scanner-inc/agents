@@ -123,3 +123,11 @@ write-correlation/
     ├── correlation_patterns.md       # tag-join template, name-fallback, entity-pivot recipes
     └── detections_index_schema.md    # _detections fields actually populated, with examples
 ```
+
+## Pre-flight briefing
+
+Before the first tool call, emit 2-3 lines telling the user what's about to happen. Mention any constituent-rule YAMLs that will be modified — pre-flight is the user's chance to redirect before edits land. Example:
+
+> Writing a correlation rule joining `<rule A>`, `<rule B>`, `<rule C>`. I'll locate each constituent's YAML, add a `correlation.<label>` tag to each (you'll need to commit those too), pick the pivot entity, draft the correlation YAML, sanity-check the historical fire-rate over 14-30d, and validate with `scanner-cli`. Writes to: `<correlation-rule-path>` + each constituent YAML. Always starts in `Staging`. ~30-60s.
+
+If any constituent is an OOB rule, mention the fork-and-disable handoff in the pre-flight so the user knows additional UI steps will be needed.

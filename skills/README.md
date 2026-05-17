@@ -1,6 +1,6 @@
 # Claude Code skills
 
-Eleven SOC and detection-engineering slash commands packaged as a [Claude Code plugin marketplace](https://docs.claude.com/en/docs/claude-code/plugins). Drop into `claude`, type `/triage-alert <id>` (or one of the others), and the skill drives Scanner MCP for you.
+Twelve SOC and detection-engineering slash commands packaged as a [Claude Code plugin marketplace](https://docs.claude.com/en/docs/claude-code/plugins). Drop into `claude`, type `/triage-alert <id>` (or one of the others), and the skill drives Scanner MCP for you.
 
 ## Skills
 
@@ -28,7 +28,13 @@ Eleven SOC and detection-engineering slash commands packaged as a [Claude Code p
 
 | Slash command | What it does |
 |---|---|
-| **[`/write-vrl`](./write-vrl)** | Author and test a VRL transformation step for Scanner. Drafts a program from a sample log + objective (normalize to ECS, drop noisy events, fan out, parse, enrich), runs it through `vector vrl` against the sample, iterates until output matches, and hands back code ready to paste into the Scanner UI. |
+| **[`/write-vrl`](./write-vrl)** | Author and test a VRL transformation step for Scanner. Drafts a program from a sample log + objective (normalize to ECS, drop noisy events, fan out, parse, enrich), runs it through `vector vrl` against the sample, iterates until output matches, and hands back code ready to paste into the Scanner UI. Carries the canonical IOC-enrichment chain (`references/ioc_enrichment.md` + `corpus/alienvault_threat_intelligence_enrichment.vrl` + `scripts/list_lookup_tables.sh`) used by `/write-detection` and `/recommend-detections` whenever IOC matching is involved. |
+
+### Reporting
+
+| Slash command | What it does |
+|---|---|
+| **[`/report-as-html`](./report-as-html)** | Render a finished terminal report (from any other skill) as a polished light-mode HTML file in `/tmp/`. Cream / teal aesthetic, self-contained (inline CSS, no JS), print-friendly. Every report skill closes with "Want this as an HTML report?" → if yes, this skill renders it → then asks "Open in browser?" separately. Not a stand-alone analysis skill — purely a renderer. |
 
 ## Requirements
 
@@ -121,8 +127,11 @@ skills/
 │   └── corpus/             # 6 worked side-by-side examples covering 1:1 / VRL-enriched / decomposed patterns
 ├── write-correlation/
 │   └── references/         # methodology, correlation_patterns (tag-join, name-fallback, entity pivots), detections_index_schema
-└── recommend-detections/
-    └── references/         # methodology, recommendation_templates, coverage_heuristics, mitre_tags
+├── recommend-detections/
+│   └── references/         # methodology, recommendation_templates, coverage_heuristics, mitre_tags
+└── report-as-html/
+    ├── templates/          # cream-light.html — canonical skeleton with inline CSS
+    └── references/         # style-guide.md (CSS palette + when to use each color), components.md (md → HTML mapping)
 ```
 
 Each skill folder is self-contained: `SKILL.md` is the entry point, `references/` holds longer methodology that the skill loads progressively, and `scripts/` holds bash helpers the skill shells out to.

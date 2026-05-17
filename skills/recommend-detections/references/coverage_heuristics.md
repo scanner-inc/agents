@@ -47,7 +47,9 @@ A rule belongs in Track B if any of:
 
 1. **High-volume Medium+ rule.** Fire-count ≥ 10/day at severity ≥ Medium over 30 days. Medium+ rules that fire 10+ times daily are almost certainly mis-classified or mis-tuned.
 2. **Low/Information rule with absurd volume.** Fire-count ≥ 500/day at any severity. Even signals shouldn't be that noisy if they're meant to feed correlations.
-3. **Zombie.** Never fired in 30 days, or last-fired > 90 days ago. Either the rule is broken (wrong field path, source no longer ingested) or it's a rare-event rule that should be checked.
+3. **Concrete-mismatch suspect.** The rule's `%ingest.source_type` / `@scnr.source_type` filter references a source-type the tenant does **not** ingest, *or* the filter clearly can't match the schema of the source it claims to target. This is real breakage — recommend re-mapping or deletion.
+
+**Do not** include rules just because they haven't fired in 30 days. Many of the most valuable rules (root account use, MFA disabled, public S3 bucket, etc.) are rare-event rules that *should* never fire. Fire-count is not a proxy for rule health.
 
 Cap Track B at 5 to keep the report scannable. If there are more candidates, pick the highest-impact (count × severity).
 
