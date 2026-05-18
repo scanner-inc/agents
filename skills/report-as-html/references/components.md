@@ -1,6 +1,6 @@
 # Component vocabulary
 
-Markdown → HTML component mapping. Each component below has a snippet you can paste into the `{{CONTENT}}` placeholder of `templates/cream-light.html`. Use these patterns rather than inventing new ones.
+Markdown → HTML component mapping. Each component below has a snippet you can paste into the `{{CONTENT}}` placeholder of `templates/light-mode.html` or `templates/dark-mode.html` — the two templates share identical CSS variable names and class names, so these snippets render correctly in either. Use these patterns rather than inventing new ones.
 
 ## 1. Verdict block (always near the top)
 

@@ -130,8 +130,8 @@ skills/
 ├── recommend-detections/
 │   └── references/         # methodology, recommendation_templates, coverage_heuristics, mitre_tags
 └── report-as-html/
-    ├── templates/          # cream-light.html — canonical skeleton with inline CSS
-    └── references/         # style-guide.md (CSS palette + when to use each color), components.md (md → HTML mapping)
+    ├── templates/          # light-mode.html (cream+teal default) + dark-mode.html (Scanner product theme)
+    └── references/         # style-guide.md (both palettes + when to use each color), components.md (md → HTML mapping; works in either template)
 ```
 
 Each skill folder is self-contained: `SKILL.md` is the entry point, `references/` holds longer methodology that the skill loads progressively, and `scripts/` holds bash helpers the skill shells out to.
