@@ -54,6 +54,15 @@ event_sink_keys:
 
 For Low / Informational rules, **omit `event_sink_keys` entirely**. Setting it to an empty array (`event_sink_keys: []`) is permitted but confusing — just leave the field out.
 
+## Signal rules: pair Low/Informational severity with `alert_per_row: true`
+
+When a signal rule's `query_text` groups by an entity column (`groupbycount(userIdentity.arn)`, `stats … by @ecs.source.ip`, etc.) and the rule is intended to feed a correlation, set `alert_per_row: true`. Each grouped row becomes its own `_detections` event with `results_table.rows[0].<entity>` populated, so the downstream correlation rule can `stats … by results_table.rows[0].<entity>` and join across rules without dropping rows. The default (`alert_per_row: false`) collapses all rows into a single per-batch `_detections` event with a truncated table — the correlation then sees only `rows[0]` and silently misses every other entity that fired in the same batch.
+
+Rule of thumb:
+
+- **Signal rule + `groupby <entity>` + feeds a correlation** → `alert_per_row: true`. This is the default for signal rules in the correlation chain.
+- **Medium+ alert rule** → leave `alert_per_row: false` unless you specifically want one alert per row (rare; usually you want one alert per batch with a `dedup_window_s`).
+
 ## Staging vs Active
 
 This is separate from severity, controlled by `enabled:`:

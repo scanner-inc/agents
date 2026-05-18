@@ -26,7 +26,7 @@ Source of truth: <https://scanner.dev/schema/scanner-detection-rule.v1.json>. Th
 | `tags` | recommended | Array of canonical tag strings. At least one MITRE tactic + one technique + `source.<slug>` is the baseline. See `mitre_tags.md`. |
 | `event_sink_keys` | conditional | Required for Medium / High / Critical / Fatal severities (sends alerts to the matching sink). **Omit** for Low / Informational — those become signals consumed by correlation rules. |
 | `dedup_window_s` | optional | Suppress repeat alerts within this window if their dedup-key hash matches. Useful for tuning noise. |
-| `alert_per_row` | optional | If `true`, emit one detection event per result-table row instead of one per query batch. Default `false`. |
+| `alert_per_row` | optional | If `true`, emit one detection event per result-table row instead of one collapsed event per query batch. Default `false`. **Set this to `true` for signal rules (Low / Informational) that `groupby` an entity column (user, IP, account, host) and are intended to be consumed by a correlation rule** — that way each grouped row lands as its own `_detections` event with `results_table.rows[0].<entity>` populated unambiguously, and the downstream correlation can `stats … by results_table.rows[0].<entity>` without missing rows. Don't enable on Medium+ alert rules unless you also raise `dedup_window_s` — it turns one alert into N. |
 | `alert_template` | optional | Custom alert formatting — `info` (labelled key/value pairs) and `actions` (button links, usually runbooks). |
 | `tests` | recommended | Array of inline unit tests. See "Tests" below. Sync is **all-or-nothing**: a failing test in any rule blocks the whole repo from syncing. |
 

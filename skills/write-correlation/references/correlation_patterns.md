@@ -156,9 +156,13 @@ alert_template:
 
 Without dedup, a sustained attack on one user can spam the same alert every `run_frequency_s` seconds.
 
-## Future: `alert_per_row`
+## Constituent rules: prefer `alert_per_row: true` for signal rules grouped by entity
 
-Scanner is rolling out per-row detection events (`alert_per_row: true`). When that's available on a constituent, its `_detections` events surface a single row each — making `results_table.rows[0].<entity>` always populated and unambiguous. Assume this is the direction; pattern A keeps working without changes.
+Per-row detection events (`alert_per_row: true`) are the right default for **signal-severity constituents** (Low / Informational) whose `query_text` groups by the same entity the correlation will pivot on. With it enabled, each grouped row lands as its own `_detections` event with `results_table.rows[0].<entity>` populated unambiguously — so this correlation's `stats … by results_table.rows[0].<entity>` reliably joins across rules and never silently drops the rows past `rows[0]`.
+
+Without it, a constituent that fired on 5 users in one batch collapses into a single `_detections` event whose `results_table.rows[0]` is one user and whose `rows[1..4]` are invisible to the correlation. The correlation will undercount and miss real co-firings.
+
+When this skill writes a `correlation.<label>` tag onto a constituent that uses `groupby`, it also patches the constituent's YAML to set `alert_per_row: true` if it's a Low/Informational signal rule. For Medium+ alert constituents that don't already have `alert_per_row: true`, the skill leaves them alone — flipping it there would change their alerting behaviour, not just their `_detections` shape.
 
 ## What NOT to do
 
