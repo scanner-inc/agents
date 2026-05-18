@@ -1,0 +1,102 @@
+# Threat Intelligence Enrichment
+
+# Configuration accessed via metadata (%params), extracted into variables at
+# the top of the script, reasonable defaults (for ipv4 threat enrichment) are
+# provided for all parameters other than the name of the lookup table to use.
+#
+# This script will abort if:
+# - There is a configuration error (one of the provided %params.* values does
+#   not have the correct type)
+# - There is an internal logic error in this script (e.g. despite verifying
+#   that x is an array on line 3, on line 4 get(., x) errors because x is not an
+#   array.
+
+# - %params.indicator_type: (string) The type of threat indicator.
+indicator_type = if (%params.indicator_type == null) { "ipv4-addr" } else { string!(%params.indicator_type) } # e.g. "ipv4-addr"
+
+# - %params.match_path: (array) The field to match against
+match_path = if (%params.match_path == null) { ["@ecs", "source", "ip"] } else { array!(%params.match_path) }
+
+# - %params.result_array_path: (array) Where to store enrichment results
+result_array_path = if (%params.result_array_path == null) { ["@ecs", "threat", "enrichments"] } else { array!(%params.result_array_path) }
+
+# - %params.lookup_table_name: (string) The name of the lookup table
+# N.B. must be specified inline below (get_enrichment_table_record can only take string literals or metadata)
+
+
+# Find the indicator we are attempting to match on in the log:
+match_value, err = get(., path: match_path);
+if err != null || is_nullish(match_value) {
+  # if we don't have a value at match_path (or errored), simply skip enrichment:
+  return .
+}
+
+# Examine the current value at result_array_path (preserving any existing threats)
+existing_threats = {
+  existing = get!(., path: result_array_path)
+
+  if existing == null {
+    []
+  } else if is_array(existing) {
+    array!(existing)
+  } else {
+    # Some non-array exists at result_array_path, rather than overwriting existing data, simply return .
+    return .
+  }
+}
+
+enrichment_result, err = get_enrichment_table_record(%params.lookup_table_name, {
+  "indicator": match_value,
+})
+
+if err != null {
+  # No threat found (no matching indicator), return input unmodified:
+  return .
+}
+
+matched_indicator = to_string!(match_value)
+
+# Create threat intelligence object from the lookup table fields:
+threat_obj = {
+  "indicator": {},
+  "matched": {},
+}
+
+simplified_type = if enrichment_result.type == "file-hash-md5" ||
+  enrichment_result.type == "file-hash-sha1" ||
+  enrichment_result.type == "file-hash-sha256" {
+  "file"
+} else {
+  enrichment_result.type
+}
+
+threat_obj.indicator.name =  matched_indicator
+threat_obj.indicator.type =  [ simplified_type ]
+threat_obj.indicator.first_seen =  enrichment_result.first_seen
+threat_obj.indicator.last_seen =  enrichment_result.last_seen
+threat_obj.indicator.description =  enrichment_result.description
+threat_obj.indicator.provider =  enrichment_result.provider
+threat_obj.indicator.reference =  enrichment_result.reference
+threat_obj.matched.atomic = matched_indicator
+threat_obj.matched.field = join!(array!(match_path), ".")
+
+# Add the indicator information at the type-specific location:
+if indicator_type == "ipv4-addr" || indicator_type == "ipv6-addr" {
+  threat_obj.indicator.ip = matched_indicator
+} else if indicator_type == "url" {
+  threat_obj.indicator.url = {"original": matched_indicator}
+} else if indicator_type == "domain-name" {
+  threat_obj.indicator.url = {"domain": matched_indicator}
+} else if indicator_type == "email-addr" {
+  threat_obj.indicator.email = {"address": matched_indicator}
+} else if indicator_type == "file-hash-md5" {
+  threat_obj.indicator.file = {"hash": { "md5": matched_indicator}}
+} else if indicator_type == "file-hash-sha1" {
+  threat_obj.indicator.file = {"hash": { "sha1": matched_indicator}}
+} else if indicator_type == "file-hash-sha256" {
+  threat_obj.indicator.file = {"hash": { "sha256": matched_indicator}}
+}
+
+# Add to the specified result array path:
+result_array = push!(existing_threats, threat_obj)
+. = set!(. , path: result_array_path, data: result_array)

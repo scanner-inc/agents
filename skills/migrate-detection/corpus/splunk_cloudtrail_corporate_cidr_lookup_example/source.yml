@@ -1,0 +1,38 @@
+name: AWS IAM Privileged Action from Non-Corporate Network
+id: 99999999-0000-0000-0000-000000000001
+version: 1
+date: '2026-05-15'
+author: example (synthetic for migration corpus)
+type: TTP
+datamodel: []
+description: |-
+  Detects high-privilege IAM actions (CreateUser, AttachRolePolicy, PutUserPolicy,
+  CreateAccessKey) originating from source IPs outside the corporate CIDR ranges.
+  Uses a lookup table (corporate_cidrs.csv) maintained by IT to classify source
+  IPs at search time.
+search: '`cloudtrail` eventSource=iam.amazonaws.com eventName=(CreateUser OR AttachRolePolicy OR PutUserPolicy OR CreateAccessKey) | lookup corporate_cidrs cidr OUTPUT classification | where isnull(classification) | stats count min(_time) as firstTime max(_time) as lastTime by src userIdentity.arn eventName awsRegion'
+how_to_implement: Requires the `corporate_cidrs` lookup table to be populated with
+  your organization's office and VPN CIDR ranges. Update quarterly.
+known_false_positives: Legitimate IAM activity from cloud-based admin tools (AWS
+  CloudShell, AWS Console from non-VPN endpoints) until they're added to the lookup.
+references:
+- https://docs.aws.amazon.com/IAM/latest/UserGuide/security_iam_id-based-policy-examples.html
+tags:
+  analytic_story:
+  - AWS IAM Privilege Escalation
+  confidence: 70
+  impact: 60
+  kill_chain_phases:
+  - Actions on Objectives
+  mitre_attack_id:
+  - T1078
+  - T1098
+  risk_score: 65
+  required_fields:
+  - _time
+  - eventName
+  - eventSource
+  - userIdentity.arn
+  - src
+  - awsRegion
+  security_domain: access

@@ -42,3 +42,19 @@ When the methodology calls for IOC enrichment in Phase 2, prefer invoking the `l
 ## Output
 
 Terminal markdown only — see the template at the bottom of `references/methodology.md`. Begin the response with the 🚨 line; end with the final *Next questions* bullet (or with the *MITRE ATT&CK* line if no follow-ups are worth listing). No preamble, no trailing commentary.
+
+## Pre-flight briefing
+
+Before the first tool call, emit 2-3 lines telling the user what's about to happen. Example:
+
+> Triaging alert `<id-short>`. I'll look up the alert (180-day window), gather surrounding evidence from the same source-type around the detection time, and enrich any IPs/hashes via `/lookup-ioc`. Read-only.
+
+If the alert id is unparseable, say so up front instead of querying blindly.
+
+## After emitting the report
+
+After the triage report is complete, ask the user:
+
+> Want this as an HTML report? *(light theme by default — say "dark" for the Scanner-app theme.)*
+
+If yes, invoke `/report-as-html` with the report content and the slug `triage-<alert-id-short>-<YYYY-MM-DD>`. The renderer asks separately about opening in the browser. See `../report-as-html/SKILL.md` for the contract.

@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "scanner-soc-skills",
-      "description": "Six SOC skills: triage-alert (lookup an alert by id and investigate), threat-hunt (sweep historical logs for fresh threat-intel IOCs), posture-report (daily Scanner posture report), investigate (free-form Scanner Q&A using a summarize -> plan -> execute pattern), lookup-ioc (one-shot IOC reputation across ThreatFox, OTX, and Feodo Tracker), and write-vrl (author and test a VRL transformation program for a Scanner ingestion step). Requires Scanner MCP configured in Claude Code; the skills also use SCANNER_API_URL / SCANNER_API_KEY for the Detection Rules REST API and OTX_API_KEY / ABUSECH_AUTH_KEY for threat intel. write-vrl additionally needs a local `vector` binary.",
+      "description": "Twelve SOC, detection-engineering, ingest-engineering, and reporting skills: triage-alert (lookup an alert by id and investigate), threat-hunt (sweep historical logs for fresh threat-intel IOCs), posture-report (daily Scanner posture report), investigate (free-form Scanner Q&A), lookup-ioc (IOC reputation across ThreatFox, OTX, Feodo Tracker), write-vrl (author and test VRL transformations, including the lookup-table → VRL → @ecs.threat.enrichments chain for IOC matching), write-detection (author a new Scanner detection rule from natural language), tune-detection (investigate FPs and produce a tuning patch), migrate-detection (translate Splunk / Sigma / Chronicle / Panther / Sentinel / Elastic rules into Scanner YAML), write-correlation (author correlation rules joining constituent rules via custom tags), recommend-detections (orchestrator that produces a prioritised list of detection-engineering next moves and routes the user to the other skills), and report-as-html (renderer that takes a finished terminal report from any other skill and emits a polished light-mode HTML file in /tmp/ — cream/teal aesthetic, self-contained inline CSS, print-friendly). Requires Scanner MCP configured in Claude Code; the skills also use SCANNER_API_URL / SCANNER_API_KEY for the Detection Rules REST API and `scanner-cli`, SCANNER_TENANT_ID for posture-report and the Lookup Tables API, OTX_API_KEY / ABUSECH_AUTH_KEY for threat intel, and SCANNER_DETECTIONS_DIR (comma-separated paths) for the detection-rule skills. write-vrl additionally needs a local `vector` binary; the detection-rule skills need `scanner-cli` on PATH.",
       "source": "./",
       "strict": false,
       "skills": [
@@ -20,7 +20,13 @@
         "./posture-report",
         "./investigate",
         "./lookup-ioc",
-        "./write-vrl"
+        "./write-vrl",
+        "./write-detection",
+        "./tune-detection",
+        "./migrate-detection",
+        "./write-correlation",
+        "./recommend-detections",
+        "./report-as-html"
       ]
     }
   ]
