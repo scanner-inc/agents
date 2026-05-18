@@ -129,6 +129,6 @@ write-detection/
 
 Before the first tool call, emit 2-3 lines telling the user what's about to happen. Include the destination path explicitly — pre-flight is the user's chance to redirect before a write. Example:
 
-> Authoring a new detection rule for "<one-line behavior summary>". I'll discover the source-type schema, sanity-check the filter against real data, draft the YAML at `<SCANNER_DETECTIONS_DIR>/<source>/<slug>.yml`, seed inline tests, validate with `scanner-cli`, and backtest. Always starts in `Staging`. ~30-90s.
+> Authoring a new detection rule for "<one-line behavior summary>". I'll discover the source-type schema, sanity-check the filter against real data, draft the YAML at `<SCANNER_DETECTIONS_DIR>/<source>/<slug>.yml`, seed inline tests, validate with `scanner-cli`, and backtest. Always starts in `Staging`.
 
 If the behaviour is IOC-based and there's no prerequisite VRL enrichment yet, surface the chain redirect (lookup table → `/write-vrl` → `/write-detection`) before drafting anything.

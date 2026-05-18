@@ -93,7 +93,7 @@ Begin the response with the `📊` line; end with the final *Recommended next mo
 
 Before the first tool call, emit 2-3 lines telling the user what's about to happen. Keep it short. Example:
 
-> Pulling your Scanner posture — environment via MCP, rule inventory via the Detection Rules API, 24h alerts and log-volume from `_detections` and source-type aggregates. Read-only. ~20s.
+> Pulling your Scanner posture — environment via MCP, rule inventory via the Detection Rules API, 24h alerts and log-volume from `_detections` and source-type aggregates. Read-only.
 
 This skill has no writes. Then run the workflow.
 
@@ -101,6 +101,6 @@ This skill has no writes. Then run the workflow.
 
 After the terminal report is complete, ask the user:
 
-> Want this as an HTML report?
+> Want this as an HTML report? *(light theme by default — say "dark" for the Scanner-app theme.)*
 
 If yes, invoke `/report-as-html` with the report content and the slug `posture-report-<YYYY-MM-DD>`. The renderer will ask separately whether to open the file in the browser — don't fuse the two prompts. See `../report-as-html/SKILL.md` for the contract.

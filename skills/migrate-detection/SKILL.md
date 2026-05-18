@@ -128,6 +128,6 @@ migrate-detection/
 
 Before the first tool call, emit 3-4 lines telling the user what's about to happen. Include the source-format detection and destination path explicitly. Example:
 
-> Migrating this rule. I'll auto-detect the source format (Splunk / Sigma / Chronicle / Panther / Sentinel / Elastic), find the closest worked example in `corpus/`, map the source data model to a Scanner source-type via Scanner MCP, iteratively test the translated query against real logs, seed inline tests, and validate with `scanner-cli`. Writes to: `<SCANNER_DETECTIONS_DIR>/migrated/<slug>.yml` (always `Staging`). ~1-2 minutes.
+> Migrating this rule. I'll auto-detect the source format (Splunk / Sigma / Chronicle / Panther / Sentinel / Elastic), find the closest worked example in `corpus/`, map the source data model to a Scanner source-type via Scanner MCP, iteratively test the translated query against real logs, seed inline tests, and validate with `scanner-cli`. Writes to: `<SCANNER_DETECTIONS_DIR>/migrated/<slug>.yml` (always `Staging`).
 
 If the source rule uses a vendor lookup table (Splunk lookups, Sentinel watchlists, Chronicle reference lists), mention the chain hand-off (`/write-vrl` first to build the enrichment) before drafting.

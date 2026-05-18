@@ -70,9 +70,9 @@ The fan-out script is the primary entrypoint, but the per-source scripts are usa
 
 ## Pre-flight briefing
 
-This skill is fast (3-source fan-out in parallel, usually <5s) — keep the pre-flight to one line:
+This skill is fast (3-source fan-out in parallel) — keep the pre-flight to one line:
 
-> Checking `<indicator>` across ThreatFox + OTX + Feodo in parallel. ~5s.
+> Checking `<indicator>` across ThreatFox + OTX + Feodo in parallel.
 
 ## After emitting the report
 

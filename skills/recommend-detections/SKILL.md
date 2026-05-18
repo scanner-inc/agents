@@ -112,7 +112,7 @@ recommend-detections/
 
 This is one of the longer-running skills. Before the first tool call, emit 3-4 lines telling the user what's about to happen. Example:
 
-> Building detection-engineering recommendations. I'll: snapshot posture via Scanner MCP, walk every YAML in `SCANNER_DETECTIONS_DIR`, pull the API rule inventory (catches UI-created rules too), query 30d of `_detections` for noise + co-firing patterns, list available IOC lookup tables via `../write-vrl/scripts/list_lookup_tables.sh`, and check which `scanner-inc/detection-rules-*` OOB packs match your ingested sources. Read-only. ~30-60s.
+> Building detection-engineering recommendations. I'll: snapshot posture via Scanner MCP, walk every YAML in `SCANNER_DETECTIONS_DIR`, pull the API rule inventory (catches UI-created rules too), query 30d of `_detections` for noise + co-firing patterns, list available IOC lookup tables via `../write-vrl/scripts/list_lookup_tables.sh`, and check which `scanner-inc/detection-rules-*` OOB packs match your ingested sources. Read-only.
 
 If `SCANNER_DETECTIONS_DIR` is unset, mention it and ask the user before walking nothing locally.
 
@@ -120,6 +120,6 @@ If `SCANNER_DETECTIONS_DIR` is unset, mention it and ask the user before walking
 
 After the recommendations are emitted, ask the user:
 
-> Want this as an HTML report?
+> Want this as an HTML report? *(light theme by default — say "dark" for the Scanner-app theme.)*
 
 If yes, invoke `/report-as-html` with the report content and the slug `scanner-recommendations-<YYYY-MM-DD>`. The renderer asks separately about opening in the browser. See `../report-as-html/SKILL.md` for the contract.

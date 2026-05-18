@@ -174,7 +174,7 @@ write-vrl/
 
 Before the first tool call, emit 2-3 lines telling the user what's about to happen. Example:
 
-> Writing a VRL transformation for "<objective>". I'll survey the sample logs, draft the program, and run it through `vector vrl` against the sample (the harness uses a local `vector` binary, no Scanner API access). The program is the deliverable — you paste it into Scanner UI → Library → Transformations. ~30-60s.
+> Writing a VRL transformation for "<objective>". I'll survey the sample logs, draft the program, and run it through `vector vrl` against the sample (the harness uses a local `vector` binary, no Scanner API access). The program is the deliverable — you paste it into Scanner UI → Library → Transformations.
 
 For IOC enrichment objectives, mention the chain explicitly:
 

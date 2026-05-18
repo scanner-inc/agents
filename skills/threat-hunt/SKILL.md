@@ -59,7 +59,7 @@ Terminal markdown only — see the template in `references/methodology.md`. Begi
 
 Before the first tool call, emit 2-3 lines telling the user what's about to happen. This is a longer-running skill — give the user a chance to redirect early. Example:
 
-> Threat hunt: picking the most environmentally relevant CVE from CISA KEV, fanning out for IOCs (ThreatFox + OTX), then sweeping ~30d of historical logs across every source-type you ingest. Read-only. ~1-2 minutes.
+> Threat hunt: picking the most environmentally relevant CVE from CISA KEV, fanning out for IOCs (ThreatFox + OTX), then sweeping ~30d of historical logs across every source-type you ingest. Read-only.
 
 If the user passed a topic argument, mention it in the briefing instead of CISA KEV ("hunting `CVE-2024-3400` — pulling IOCs from ThreatFox then sweeping 30d of logs").
 
@@ -67,6 +67,6 @@ If the user passed a topic argument, mention it in the briefing instead of CISA 
 
 After the hunt report is complete, ask the user:
 
-> Want this as an HTML report?
+> Want this as an HTML report? *(light theme by default — say "dark" for the Scanner-app theme.)*
 
 If yes, invoke `/report-as-html` with the report content and the slug `hunt-<topic-slug>-<YYYY-MM-DD>`. The renderer asks separately about opening in the browser. See `../report-as-html/SKILL.md` for the contract.

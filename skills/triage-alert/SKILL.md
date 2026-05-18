@@ -47,7 +47,7 @@ Terminal markdown only — see the template at the bottom of `references/methodo
 
 Before the first tool call, emit 2-3 lines telling the user what's about to happen. Example:
 
-> Triaging alert `<id-short>`. I'll look up the alert (180-day window), gather surrounding evidence from the same source-type around the detection time, and enrich any IPs/hashes via `/lookup-ioc`. Read-only. ~30s.
+> Triaging alert `<id-short>`. I'll look up the alert (180-day window), gather surrounding evidence from the same source-type around the detection time, and enrich any IPs/hashes via `/lookup-ioc`. Read-only.
 
 If the alert id is unparseable, say so up front instead of querying blindly.
 
@@ -55,6 +55,6 @@ If the alert id is unparseable, say so up front instead of querying blindly.
 
 After the triage report is complete, ask the user:
 
-> Want this as an HTML report?
+> Want this as an HTML report? *(light theme by default — say "dark" for the Scanner-app theme.)*
 
 If yes, invoke `/report-as-html` with the report content and the slug `triage-<alert-id-short>-<YYYY-MM-DD>`. The renderer asks separately about opening in the browser. See `../report-as-html/SKILL.md` for the contract.
