@@ -86,7 +86,7 @@ For the top 30 rules by fire-count, also query:
 
 Note rules that have **never fired in 30 days**, but do *not* treat fire-count alone as a problem signal — many of the most valuable rules (root account use, MFA disabled, S3 bucket made public, etc.) are rare-event rules that *should* never fire. Surface a never-fired rule as a Track B candidate only when there's a concrete mismatch signal:
 
-- The rule's `%ingest.source_type` / `@scnr.source_type` filter references a source-type the tenant **does not** ingest (clear breakage — recommend deletion or re-mapping).
+- The rule's `@scnr.source_type` filter references a source-type the tenant **does not** ingest (clear breakage — recommend deletion or re-mapping).
 - The rule's filter references `eventName` / `action` values that are common in the tenant's actual data (verify by sampling) but the rule still hasn't fired — suggests a field-path bug. Require evidence before claiming this.
 
 If there's no specific evidence of breakage, leave never-fired rules alone. Do not list them in bulk; do not call them "zombies", "stale", or "broken". If the user wants to dig deeper, point them at `/investigate`.
@@ -161,7 +161,7 @@ For each rule in the top firers list at **Medium+ severity** and >10 fires/day:
 Optionally include rules with a concrete mismatch signal (filter references a source-type the tenant doesn't ingest, or a field path that doesn't exist in real events):
 
 ```
-- **`<rule name>`** — filter references `%ingest.source_type=<x>` but tenant ingests no `<x>` data; re-map or delete
+- **`<rule name>`** — filter references `@scnr.source_type=<x>` but tenant ingests no `<x>` data; re-map or delete
   → `/tune-detection <rule name>`
 ```
 

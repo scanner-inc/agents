@@ -22,7 +22,7 @@ For these:
 ### Broad
 
 The first filter clause hits a **high-volume** event class. Heuristics:
-- `%ingest.source_type="aws:cloudtrail"` alone — that's millions of events per day in a typical tenant.
+- `@scnr.source_type="aws:cloudtrail"` alone — that's millions of events per day in a typical tenant.
 - `eventSource="iam.amazonaws.com"` alone.
 - No `eventName` predicate.
 - A wildcard like `**:value` (those are slow regardless).

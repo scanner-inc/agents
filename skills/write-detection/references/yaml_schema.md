@@ -30,15 +30,14 @@ Source of truth: <https://scanner.dev/schema/scanner-detection-rule.v1.json>. Th
 | `alert_template` | optional | Custom alert formatting — `info` (labelled key/value pairs) and `actions` (button links, usually runbooks). |
 | `tests` | recommended | Array of inline unit tests. See "Tests" below. Sync is **all-or-nothing**: a failing test in any rule blocks the whole repo from syncing. |
 
-## Source filtering — prefer `@scnr.source_type` / `%ingest.source_type` over `@index=`
+## Source filtering — prefer `@scnr.source_type` over `@index=`
 
 By **default, a detection rule queries every index the user has read access to** and returns matches from any of them. So you usually want to filter by **source-type**, not by **index**.
 
 In preference order:
 
-1. **`@scnr.source_type="<value>"`** — set automatically by Scanner for log sources with built-in Collect rules (e.g., `aws:cloudtrail`, `okta`, `1password`, `auth0:audit`, `github:audit`, `aws:vpc_flow`). Always your first choice for natively-supported sources.
-2. **`%ingest.source_type="<value>"`** — set when the user added it by hand via a custom transformation or index rule. Value is whatever they wrote.
-3. **A data-derived identifier field** — when the source isn't natively supported, `@scnr.source_type` becomes `"custom:generic"` (useless for filtering). In this case, sample real events (`get_top_columns`, `| head 3`) to find a field that uniquely identifies this source — commonly `vendor`, `product`, `provider`, `log_type`, or some bespoke field the customer added.
+1. **`@scnr.source_type="<value>"`** — set automatically by Scanner for log sources with built-in Collect rules (e.g., `aws:cloudtrail`, `okta`, `1password`, `auth0:audit`, `github:audit`, `aws:vpc_flow`). Always your first choice. (`%ingest.source_type` is a legacy predecessor that only exists on older index rules — don't write it for new rules.)
+2. **A data-derived identifier field** — when the source isn't natively supported, `@scnr.source_type` becomes `"custom:generic"` (useless for filtering). In this case, sample real events (`get_top_columns`, `| head 3`) to find a field that uniquely identifies this source — commonly `vendor`, `product`, `provider`, `log_type`, or some bespoke field the customer added.
 
 ## When `@index=` IS the right choice
 
@@ -106,14 +105,24 @@ See `severity_policy.md` for the picking heuristic.
 tests:
   - name: <descriptive name>
     now_timestamp: "2026-05-15T00:03:00.000Z"   # optional; defaults to latest event timestamp
+    dataset_format: FlatTable                    # see below; set explicitly
     dataset_inline: |
-      {"timestamp":"...","field":"value"}
-      {"timestamp":"...","field":"value"}
+      {"@scnr.datetime":"...","field":"value"}
+      {"@scnr.datetime":"...","field":"value"}
     expected_detection_result: true              # or false
 ```
 
 - `dataset_inline` is **newline-delimited JSON**, one event per line. No outer array.
-- Every event needs a `timestamp` in RFC-3339 (`2026-05-15T00:02:30.000Z`).
+- Every event needs a timestamp in RFC-3339 (`2026-05-15T00:02:30.000Z`), via the reserved `@scnr.datetime` column. (A top-level `timestamp` field is also accepted as a legacy-only fallback; prefer `@scnr.datetime`.)
+- `dataset_format` controls how each event is turned into columns. **Set it explicitly:**
+  - `FlatTable` — each event is an already-flattened column table; every key is a column name verbatim (`"a.b"` is the column `a.b`, never nested), and nested objects/arrays are rejected. Use this when writing events as flat column tables. Reserved fields like `@scnr.source_type` / `@scnr.datetime` are set as flat keys.
+  - `RawJson` — each event is raw nested JSON, flattened the way live ingestion would. Use this when pasting raw nested log events. A flat dotted key (`"a.b"`) flattens to a column DISTINCT from the nested path — so reserved fields must be written nested: `"@scnr": {"datetime": ..., "source_type": ...}`, never as flat `"@scnr.<key>"` keys.
+  - `LegacyFlatten` (default if omitted) — backwards-compatibility format for older tests; **avoid for new tests** (ambiguous path collisions, doesn't match real ingestion).
+- Exactly three system fields are user-settable in test events (nested under `@scnr` in `RawJson`; flat keys otherwise):
+  - `@scnr.datetime` — the event timestamp; the queryable `@scnr.datetime`/`@scnr.time_ns` columns are derived from it (always agree).
+  - `@scnr.source_type` — defaults to `custom:generic`. Unknown values are preserved verbatim (test-only compat; real ingestion only produces known source types).
+  - `@scnr.source_type_custom_name` — defaults to `scnr:test`; blank whenever the source type isn't `custom:generic`, regardless of what you set.
+- All other reserved fields are filled by Scanner, ignoring author values: `@index`/`@index_id` are fixed test values; event-identity fields derive from the timestamp and the event's position in the dataset. Writing any other `@scnr*` key (any key beginning with `@scnr`) is unspecified behavior which may change at any time without warning.
 - The test window is `[now_timestamp - time_range_s, now_timestamp)` — inclusive lower bound, exclusive upper. Events with timestamp `>= now_timestamp` are NOT counted.
 - `now_timestamp` is rounded up to the next `run_frequency_s` minute boundary.
 

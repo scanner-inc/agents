@@ -170,8 +170,9 @@ The rule has a `tests:` array. Append at least one new negative test seeded from
 ```yaml
   - name: Regression — does not fire on CloudShell user-agent (FP from 2026-05-12)
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: FlatTable
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","%ingest.source_type":"aws:cloudtrail","eventName":"ConsoleLogin","errorMessage":"Failed authentication","userAgent":"AWSConsole-HealthCheck","userIdentity":{"arn":"arn:aws:iam::123456789012:user/ci-deployer"}}
+      {"@scnr.datetime":"2026-05-15T00:02:30.000Z","@scnr.source_type":"aws:cloudtrail","eventName":"ConsoleLogin","errorMessage":"Failed authentication","userAgent":"AWSConsole-HealthCheck","userIdentity.arn":"arn:aws:iam::123456789012:user/ci-deployer"}
     expected_detection_result: false
 ```
 

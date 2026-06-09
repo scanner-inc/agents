@@ -21,7 +21,7 @@ Aggregate over the rules:
 - Total active rules, staging rules, paused rules (from `enabled_state_override`).
 - MITRE tactics covered — derive from `tactics.ta*` tags.
 - MITRE techniques covered — derive from `techniques.t*` tags.
-- Log sources covered — infer from `@index=` clauses and `%ingest.source_type:` predicates inside `query_text`.
+- Log sources covered — infer from `@index=` clauses and `@scnr.source_type:` predicates inside `query_text`.
 - Rules that have never fired — `last_alerted_at` is null.
 - Rules last fired >90 days ago — candidates for the *zombie* bucket.
 

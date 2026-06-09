@@ -92,7 +92,7 @@ The detection rule queries the enrichment array, not the raw IOC list. Examples:
 
 ```scanner
 # Any CloudTrail event with an enriched threat indicator
-%ingest.source_type:aws:cloudtrail
+@scnr.source_type:aws:cloudtrail
 @ecs.threat.enrichments[*].indicator.type:"ipv4-addr"
 ```
 
@@ -103,7 +103,7 @@ The detection rule queries the enrichment array, not the raw IOC list. Examples:
 
 ```scanner
 # VPC flow records hitting a known-bad destination IP
-%ingest.source_type:aws:vpc_flow
+@scnr.source_type:aws:vpc_flow
 @ecs.threat.enrichments[*].indicator.type:"ipv4-addr"
 @ecs.threat.enrichments[*].matched.field:"@ecs.destination.ip"
 ```

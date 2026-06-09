@@ -37,7 +37,7 @@ Follow the full procedure in `references/methodology.md`. The short version:
    - **Broad** (filter hits more than a few hundred events / day): cap at 7d and warn the user that longer backtests get expensive.
    Zero hits → stop, the filter is wrong or the source isn't ingested.
 4. **Draft the YAML.** Schema rules in `references/yaml_schema.md`. Always start with `# schema: https://scanner.dev/schema/scanner-detection-rule.v1.json` and `enabled: Staging` (promotion to `Active` is a human step). Severity per `references/severity_policy.md` (Medium+ → relevant `event_sink_keys`; Low/Information → no event sinks, treated as signals for correlation).
-5. **Inline tests.** 2–4 tests in `dataset_inline:` JSONL form. Seed positive cases from the real sample events you pulled in step 3 (sanitised). At least one negative case.
+5. **Inline tests.** 2–4 tests in `dataset_inline:` JSONL form. Set `dataset_format` explicitly (`FlatTable` for flat column-table events, `RawJson` for raw nested events) and give each event an `@scnr.datetime` timestamp (flat key under `FlatTable`; nested `"@scnr": {"datetime": ...}` under `RawJson`). Seed positive cases from the real sample events you pulled in step 3 (sanitised). At least one negative case.
 6. **Validate offline.** Write the YAML into one of the paths in `SCANNER_DETECTIONS_DIR` (or the path the user gave). Run:
    ```bash
    scanner-cli validate -f <path>
@@ -79,7 +79,7 @@ If the behaviour the user wants to catch is **"match logs against threat-intel I
 Example detection rule body for an enriched event:
 
 ```
-%ingest.source_type:aws:cloudtrail
+@scnr.source_type:aws:cloudtrail
 @ecs.threat.enrichments[*].indicator.type:"ipv4-addr"
 @ecs.threat.enrichments[*].indicator.provider:"alienvault-otx"
 ```

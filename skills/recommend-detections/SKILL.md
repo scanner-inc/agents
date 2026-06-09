@@ -31,7 +31,7 @@ Follow the full procedure in `references/methodology.md`. The short version:
 3. **Active firing data.** Query `_detections` over the last 30 days, grouped by rule `name` × `severity`. This reveals:
    - **Noise candidates** — top firers, especially at Medium+ severity (Track B candidates).
    - **Co-firing entities** — multiple distinct rule names firing on the same entity (`results_table.rows[0].userIdentity.arn` etc.) — Track C candidates.
-   - **Concrete-mismatch suspects** — rules whose `%ingest.source_type` filter doesn't match any actually-ingested source. Surface these in Track B. Do **not** flag rules just because they haven't fired — many of the most valuable rules are rare-event rules that should never fire.
+   - **Concrete-mismatch suspects** — rules whose `@scnr.source_type` filter doesn't match any actually-ingested source. Surface these in Track B. Do **not** flag rules just because they haven't fired — many of the most valuable rules are rare-event rules that should never fire.
 
 4. **Build coverage matrix.**
    - Rows: MITRE tactics × techniques (canonical IDs from `references/mitre_tags.md`).

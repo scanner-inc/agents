@@ -83,7 +83,7 @@ The migrated rule needs to use the **raw source field paths**. ECS → CloudTrai
 
 | ECS path | CloudTrail-native path |
 |---|---|
-| `event.dataset:aws.cloudtrail` | `%ingest.source_type="aws:cloudtrail"` |
+| `event.dataset:aws.cloudtrail` | `@scnr.source_type="aws:cloudtrail"` |
 | `event.provider` | `eventSource` |
 | `event.action` | `eventName` |
 | `event.outcome:success` | `not errorCode:*` |
@@ -254,7 +254,7 @@ description: |-
   Migrated from Elastic detection rule `12345678-…`.
 severity: Medium
 query_text: |-
-  %ingest.source_type="aws:cloudtrail"
+  @scnr.source_type="aws:cloudtrail"
   eventSource="iam.amazonaws.com"
   eventName="CreateUser"
   not errorCode:*
@@ -283,18 +283,20 @@ alert_template:
 tests:
   - name: Fires on successful CreateUser
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","%ingest.source_type":"aws:cloudtrail","eventSource":"iam.amazonaws.com","eventName":"CreateUser","userIdentity":{"arn":"arn:aws:iam::123456789012:user/admin"},"requestParameters":{"userName":"new-user"},"awsRegion":"us-east-1"}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventSource":"iam.amazonaws.com","eventName":"CreateUser","userIdentity":{"arn":"arn:aws:iam::123456789012:user/admin"},"requestParameters":{"userName":"new-user"},"awsRegion":"us-east-1"}
     expected_detection_result: true
   - name: Does not fire on failed CreateUser
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","%ingest.source_type":"aws:cloudtrail","eventSource":"iam.amazonaws.com","eventName":"CreateUser","errorCode":"AccessDenied","userIdentity":{"arn":"arn:aws:iam::123456789012:user/admin"},"requestParameters":{"userName":"new-user"},"awsRegion":"us-east-1"}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventSource":"iam.amazonaws.com","eventName":"CreateUser","errorCode":"AccessDenied","userIdentity":{"arn":"arn:aws:iam::123456789012:user/admin"},"requestParameters":{"userName":"new-user"},"awsRegion":"us-east-1"}
     expected_detection_result: false
 ```
 
 Translation notes:
-- `event.dataset:aws.cloudtrail` → `%ingest.source_type="aws:cloudtrail"`.
+- `event.dataset:aws.cloudtrail` → `@scnr.source_type="aws:cloudtrail"`.
 - `event.provider:iam.amazonaws.com` → `eventSource="iam.amazonaws.com"`.
 - `event.action:CreateUser` → `eventName="CreateUser"`.
 - `event.outcome:success` → `not errorCode:*` (Scanner's idiom for "non-failed CloudTrail").

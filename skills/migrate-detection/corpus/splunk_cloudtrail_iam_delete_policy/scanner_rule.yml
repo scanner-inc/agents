@@ -49,11 +49,13 @@ alert_template:
 tests:
   - name: Fires on successful DeletePolicy by an IAM user
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","@scnr.source_type":"aws:cloudtrail","eventName":"DeletePolicy","eventSource":"iam.amazonaws.com","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe","principalId":"AIDAEXAMPLE","type":"IAMUser"},"requestParameters":{"policyArn":"arn:aws:iam::123456789012:policy/example-policy"},"sourceIPAddress":"203.0.113.5","awsRegion":"us-east-1","recipientAccountId":"123456789012","userAgent":"aws-cli/2.13.0 Python/3.11.4","eventID":"EXAMPLE-EVENT-ID"}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventName":"DeletePolicy","eventSource":"iam.amazonaws.com","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe","principalId":"AIDAEXAMPLE","type":"IAMUser"},"requestParameters":{"policyArn":"arn:aws:iam::123456789012:policy/example-policy"},"sourceIPAddress":"203.0.113.5","awsRegion":"us-east-1","recipientAccountId":"123456789012","userAgent":"aws-cli/2.13.0 Python/3.11.4","eventID":"EXAMPLE-EVENT-ID"}
     expected_detection_result: true
   - name: Does not fire on AWS-internal DeletePolicy
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","@scnr.source_type":"aws:cloudtrail","eventName":"DeletePolicy","eventSource":"iam.amazonaws.com","userIdentity":{"type":"AWSService","invokedBy":"lambda.amazonaws.com"},"sourceIPAddress":"lambda.amazonaws.com","userAgent":"lambda.amazonaws.com"}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventName":"DeletePolicy","eventSource":"iam.amazonaws.com","userIdentity":{"type":"AWSService","invokedBy":"lambda.amazonaws.com"},"sourceIPAddress":"lambda.amazonaws.com","userAgent":"lambda.amazonaws.com"}
     expected_detection_result: false

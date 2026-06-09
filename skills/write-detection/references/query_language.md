@@ -4,7 +4,7 @@ The full reference lives in Scanner's `get_docs("syntax")` MCP call. This file c
 
 ## Core rules
 
-- **Source filtering**: prefer `@scnr.source_type="<value>"` (built-in) or `%ingest.source_type="<value>"` (user-added) over `@index=`. Detection rules query all readable indexes by default — source-type filtering is usually the right scope. See `yaml_schema.md` for when `@index=` is actually warranted.
+- **Source filtering**: prefer `@scnr.source_type="<value>"` (set automatically by Scanner's built-in Collect rules) over `@index=`. Detection rules query all readable indexes by default — source-type filtering is usually the right scope. See `yaml_schema.md` for when `@index=` is actually warranted.
 - `@index=<exact_name>` is for narrowing searches when source-type filtering isn't enough. **In detection rules**, if you use `@index=` you must use the full `@index={UUID|"alias"}` form — aliases alone parse-error at sync time. (Ad-hoc MCP queries can use the alias form.) Resolve UUIDs via `@index=<alias> | head 1 | table(@index, @index_id)`.
 - `field:value` — partial / token match. Examples: `email:'mydomain'` matches `user@mydomain.com` because `@` and `.` are token boundaries.
 - `field=value` — exact match.
@@ -57,7 +57,7 @@ Everything except `[a-zA-Z0-9_]` is a token boundary. This means `:` (partial ma
 
 **Event-counting with group-by entity:**
 ```scanner
-%ingest.source_type="aws:cloudtrail"
+@scnr.source_type="aws:cloudtrail"
 eventSource="iam.amazonaws.com"
 eventName=PutUserPolicy
 | stats

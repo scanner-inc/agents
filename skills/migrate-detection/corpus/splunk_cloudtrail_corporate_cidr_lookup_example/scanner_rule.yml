@@ -53,11 +53,13 @@ alert_template:
 tests:
   - name: Fires when CreateUser comes from a non-corporate IP
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","@scnr.source_type":"aws:cloudtrail","eventSource":"iam.amazonaws.com","eventName":"CreateUser","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"sourceIPAddress":"8.8.8.8","source":{"classification":"non_corporate"},"awsRegion":"us-east-1"}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventSource":"iam.amazonaws.com","eventName":"CreateUser","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"sourceIPAddress":"8.8.8.8","source":{"classification":"non_corporate"},"awsRegion":"us-east-1"}
     expected_detection_result: true
   - name: Does not fire when CreateUser comes from a corporate IP
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","@scnr.source_type":"aws:cloudtrail","eventSource":"iam.amazonaws.com","eventName":"CreateUser","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"sourceIPAddress":"10.0.5.42","source":{"classification":"corporate"},"awsRegion":"us-east-1"}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventSource":"iam.amazonaws.com","eventName":"CreateUser","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"sourceIPAddress":"10.0.5.42","source":{"classification":"corporate"},"awsRegion":"us-east-1"}
     expected_detection_result: false

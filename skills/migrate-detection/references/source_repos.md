@@ -54,7 +54,7 @@ known_false_positives: …
 references: [URLs]
 ```
 
-The `search:` field is SPL with Splunk-specific macros (`` `cloudtrail` `` expands to `index=cloudtrail`; ``  `security_content_ctime(firstTime)` `` formats a timestamp). The skill must unwrap these macros — Splunk's `search.conf` and `macros.conf` define them, but for the purpose of migration, treat `` `cloudtrail` `` as `%ingest.source_type="aws:cloudtrail"`.
+The `search:` field is SPL with Splunk-specific macros (`` `cloudtrail` `` expands to `index=cloudtrail`; ``  `security_content_ctime(firstTime)` `` formats a timestamp). The skill must unwrap these macros — Splunk's `search.conf` and `macros.conf` define them, but for the purpose of migration, treat `` `cloudtrail` `` as `@scnr.source_type="aws:cloudtrail"`.
 
 ## Sigma
 

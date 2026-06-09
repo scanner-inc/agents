@@ -72,7 +72,7 @@ Top firers (24h):
 ## Coverage Gaps
 - <Each source with volume but no rules — one bullet per source, with the volume and the missing rule category, e.g. "aws:ecs — 212M events/day, zero ECS container-runtime rules">
 - <MITRE tactics with zero or near-zero coverage, cited by canonical tag, e.g. "Zero rules: `tactics.ta0043.reconnaissance`, `tactics.ta0011.command_and_control`. Single rule only: `tactics.ta0008.lateral_movement`, `tactics.ta0009.collection`">
-- <Rules with concrete-mismatch suspicion (filter references a `%ingest.source_type` you don't ingest, etc.) — count plus one-line characterization. Do **not** flag rules just because they haven't fired; many of the most valuable rules are rare-event rules that should never fire.>
+- <Rules with concrete-mismatch suspicion (filter references a `@scnr.source_type` you don't ingest, etc.) — count plus one-line characterization. Do **not** flag rules just because they haven't fired; many of the most valuable rules are rare-event rules that should never fire.>
 
 ## Recommended next moves
 (based on 90-day rule activity)

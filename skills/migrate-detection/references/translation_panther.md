@@ -41,10 +41,10 @@ Tests:
 |---|---|
 | `DisplayName` | `name` |
 | `Description` (if present) | `description` |
-| `LogTypes: [AWS.CloudTrail]` | `%ingest.source_type="aws:cloudtrail"` |
-| `LogTypes: [Okta.SystemLog]` | `%ingest.source_type="okta"` |
-| `LogTypes: [GitHub.Audit]` | `%ingest.source_type="github"` |
-| `LogTypes: [GSuite.Reports]` | `%ingest.source_type="gsuite"` |
+| `LogTypes: [AWS.CloudTrail]` | `@scnr.source_type="aws:cloudtrail"` |
+| `LogTypes: [Okta.SystemLog]` | `@scnr.source_type="okta"` |
+| `LogTypes: [GitHub.Audit]` | `@scnr.source_type="github"` |
+| `LogTypes: [GSuite.Reports]` | `@scnr.source_type="gsuite"` |
 | `Severity: HIGH` | `severity: High` (case-fixed) |
 | `Severity: INFO` | `severity: Informational` |
 | `Tags: [...]` | (drop or repurpose as freeform tags) |
@@ -222,13 +222,15 @@ Tests:
 tests:
   - name: Root Console Login fires
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","%ingest.source_type":"aws:cloudtrail","eventName":"ConsoleLogin","userIdentity":{"type":"Root"},"responseElements":{"ConsoleLogin":"Success"}}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventName":"ConsoleLogin","userIdentity":{"type":"Root"},"responseElements":{"ConsoleLogin":"Success"}}
     expected_detection_result: true
   - name: IAM user login does not fire
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","%ingest.source_type":"aws:cloudtrail","eventName":"ConsoleLogin","userIdentity":{"type":"IAMUser","userName":"johndoe"},"responseElements":{"ConsoleLogin":"Success"}}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventName":"ConsoleLogin","userIdentity":{"type":"IAMUser","userName":"johndoe"},"responseElements":{"ConsoleLogin":"Success"}}
     expected_detection_result: false
 ```
 
@@ -281,7 +283,7 @@ description: |-
   Migrated from Panther rule `AWS.CloudTrail.RootConsoleLogin`.
 severity: High
 query_text: |-
-  %ingest.source_type="aws:cloudtrail"
+  @scnr.source_type="aws:cloudtrail"
   eventName="ConsoleLogin"
   userIdentity.type="Root"
   responseElements.ConsoleLogin="Success"
@@ -311,13 +313,15 @@ alert_template:
 tests:
   - name: Root console login fires
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","%ingest.source_type":"aws:cloudtrail","eventName":"ConsoleLogin","userIdentity":{"type":"Root"},"responseElements":{"ConsoleLogin":"Success"},"sourceIPAddress":"203.0.113.5","awsRegion":"us-east-1","recipientAccountId":"123456789012"}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventName":"ConsoleLogin","userIdentity":{"type":"Root"},"responseElements":{"ConsoleLogin":"Success"},"sourceIPAddress":"203.0.113.5","awsRegion":"us-east-1","recipientAccountId":"123456789012"}
     expected_detection_result: true
   - name: IAM user console login does not fire
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","%ingest.source_type":"aws:cloudtrail","eventName":"ConsoleLogin","userIdentity":{"type":"IAMUser","userName":"johndoe"},"responseElements":{"ConsoleLogin":"Success"},"sourceIPAddress":"203.0.113.5","awsRegion":"us-east-1","recipientAccountId":"123456789012"}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventName":"ConsoleLogin","userIdentity":{"type":"IAMUser","userName":"johndoe"},"responseElements":{"ConsoleLogin":"Success"},"sourceIPAddress":"203.0.113.5","awsRegion":"us-east-1","recipientAccountId":"123456789012"}
     expected_detection_result: false
 ```
 

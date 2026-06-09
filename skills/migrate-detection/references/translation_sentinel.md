@@ -65,7 +65,7 @@ Same fields, different envelope. The `properties` object maps to the YAML root.
 | `triggerOperator: gt`, `triggerThreshold: 10` | `| where <result-column> > 10` |
 | `tactics: [InitialAccess]` | look up tactic ID — `tactics.ta0001.initial_access` |
 | `relevantTechniques: [T1078]` | `techniques.t1078.valid_accounts` |
-| `requiredDataConnectors[].dataTypes` | determines `%ingest.source_type` / `@index` |
+| `requiredDataConnectors[].dataTypes` | determines `@scnr.source_type` / `@index` |
 | `id` (UUID) | preserve in `description` for traceability |
 
 Always add `source.<slug>` based on the connector / data type.
@@ -75,11 +75,11 @@ Always add `source.<slug>` based on the connector / data type.
 | Sentinel data type | Likely Scanner source |
 |---|---|
 | `SecurityEvent` (Windows host) | Customer-specific — confirm via `get_top_columns`. Often a Sysmon/WinEventForwarder index. |
-| `SigninLogs`, `AADNonInteractiveUserSignInLogs` | `%ingest.source_type="azure:signin"` |
-| `AzureActivity` | `%ingest.source_type="azure:activity"` |
-| `AWSCloudTrail` | `%ingest.source_type="aws:cloudtrail"` |
-| `OfficeActivity` | `%ingest.source_type="m365:audit"` |
-| `GoogleCloudSCC` | `%ingest.source_type="gcp:scc"` |
+| `SigninLogs`, `AADNonInteractiveUserSignInLogs` | `@scnr.source_type="azure:signin"` |
+| `AzureActivity` | `@scnr.source_type="azure:activity"` |
+| `AWSCloudTrail` | `@scnr.source_type="aws:cloudtrail"` |
+| `OfficeActivity` | `@scnr.source_type="m365:audit"` |
+| `GoogleCloudSCC` | `@scnr.source_type="gcp:scc"` |
 
 If the connector is one Scanner doesn't ingest in this tenant, tell the user and stop — translating a rule against unavailable data is wasted work.
 
@@ -97,7 +97,7 @@ SecurityEvent
 →
 
 ```scanner
-%ingest.source_type="<windows-source>"
+@scnr.source_type="<windows-source>"
 EventID=4625
 ```
 
@@ -152,7 +152,7 @@ query: |
 → Scanner:
 
 ```scanner
-%ingest.source_type="<windows-source>"
+@scnr.source_type="<windows-source>"
 EventID=4625
 | stats count() as FailedLogons by Account
 | where FailedLogons > 10
@@ -203,7 +203,7 @@ SecurityEvent
 Inline the literal list into the Scanner filter:
 
 ```scanner
-%ingest.source_type="<windows-source>"
+@scnr.source_type="<windows-source>"
 sourceIPAddress: ("1.2.3.4" "5.6.7.8")
 ```
 
@@ -273,7 +273,7 @@ description: |-
   Migrated from Azure Sentinel rule `12345678-1234-1234-1234-123456789012`.
 severity: Medium
 query_text: |-
-  %ingest.source_type="azure:signin"
+  @scnr.source_type="azure:signin"
   not ResultType="0"
   | stats count() as FailureCount by IPAddress, UserPrincipalName
   | where FailureCount > 10
@@ -297,11 +297,13 @@ alert_template:
 tests:
   - name: Fires on 11 failures from same IP
     now_timestamp: "2026-05-15T01:01:00.000Z"
+    dataset_format: FlatTable
     dataset_inline: |
-      (11 events with timestamp in the window, same IPAddress + UserPrincipalName, ResultType not 0)
+      (11 events with @scnr.datetime in the window, same IPAddress + UserPrincipalName, ResultType not 0)
     expected_detection_result: true
   - name: Does not fire on 5 failures
     now_timestamp: "2026-05-15T01:01:00.000Z"
+    dataset_format: FlatTable
     dataset_inline: |
       (5 events with same shape, below threshold)
     expected_detection_result: false

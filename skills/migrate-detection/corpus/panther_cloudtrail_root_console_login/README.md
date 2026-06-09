@@ -15,7 +15,7 @@
 | YAML `LogTypes: [AWS.CloudTrail]` | `@scnr.source_type="aws:cloudtrail"` |
 | YAML `Reports.MITRE ATT&CK: [TA0001:T1078, TA0003:T1078]` | `tags: [tactics.ta0001.initial_access, tactics.ta0003.persistence, techniques.t1078.valid_accounts]` |
 | `def alert_context(event): return aws_rule_context(event)` | `alert_template.info` with `sourceIPAddress`, `recipientAccountId`, `awsRegion` |
-| YAML `Tests` block (Python dicts) | `tests` array with `dataset_inline` JSONL — added a `timestamp` to each event (Panther test events don't always include one; Scanner requires it). |
+| YAML `Tests` block (Python dicts) | `tests` array with `dataset_inline` JSONL (`dataset_format: RawJson`) — added an `@scnr.datetime` to each event (Panther test events don't always include a timestamp; Scanner requires one). |
 
 ## Key idioms to learn from this example
 

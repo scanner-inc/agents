@@ -26,7 +26,7 @@ rule <rule_name> {
 | `rule_name` | `name` |
 | `description` | `description` (preserve, append `## References` if `reference` present) |
 | `severity` | `severity` (`"High"` → `High`) |
-| `data_source` | Use to determine `%ingest.source_type` and `@index` |
+| `data_source` | Use to determine `@scnr.source_type` and `@index` |
 | `mitre_attack_tactic` (display name) | Look up tactic ID; e.g., `"Defense Evasion"` → `tactics.ta0005.defense_evasion` |
 | `mitre_attack_technique_id` | `techniques.tNNNN.snake_name` (look up in `mitre_tags.md`) |
 | `type = "Alert"` | (already implied by Scanner rules) |
@@ -53,7 +53,7 @@ Chronicle normalises to UDM; Scanner usually has the raw source schema. Common C
 
 | UDM path | CloudTrail-native path |
 |---|---|
-| `$cloudtrail.metadata.vendor_name` | (implicit) — replace with `%ingest.source_type="aws:cloudtrail"` |
+| `$cloudtrail.metadata.vendor_name` | (implicit) — replace with `@scnr.source_type="aws:cloudtrail"` |
 | `$cloudtrail.metadata.product_name` | (implicit) — same as above |
 | `$cloudtrail.metadata.product_event_type` | `eventName` |
 | `$cloudtrail.metadata.event_type` | (often `NETWORK_CONNECTION`, `USER_LOGIN`, etc. — translate behaviour, not the literal value) |
@@ -198,7 +198,7 @@ description: |-
   Migrated from Chronicle YARA-L rule `mr_22495d55-…`.
 severity: High
 query_text: |-
-  %ingest.source_type="aws:cloudtrail"
+  @scnr.source_type="aws:cloudtrail"
   eventSource="guardduty.amazonaws.com"
   (
     eventName="DeleteDetector"
@@ -230,18 +230,21 @@ alert_template:
 tests:
   - name: Fires on DeleteDetector
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","%ingest.source_type":"aws:cloudtrail","eventSource":"guardduty.amazonaws.com","eventName":"DeleteDetector","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"awsRegion":"us-west-2"}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventSource":"guardduty.amazonaws.com","eventName":"DeleteDetector","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"awsRegion":"us-west-2"}
     expected_detection_result: true
   - name: Fires on UpdateDetector that disables
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","%ingest.source_type":"aws:cloudtrail","eventSource":"guardduty.amazonaws.com","eventName":"UpdateDetector","requestParameters":{"enable":"false"},"userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"awsRegion":"us-west-2"}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventSource":"guardduty.amazonaws.com","eventName":"UpdateDetector","requestParameters":{"enable":"false"},"userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"awsRegion":"us-west-2"}
     expected_detection_result: true
   - name: Does not fire on UpdateDetector that enables
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","%ingest.source_type":"aws:cloudtrail","eventSource":"guardduty.amazonaws.com","eventName":"UpdateDetector","requestParameters":{"enable":"true"},"userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"awsRegion":"us-west-2"}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventSource":"guardduty.amazonaws.com","eventName":"UpdateDetector","requestParameters":{"enable":"true"},"userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"awsRegion":"us-west-2"}
     expected_detection_result: false
 ```
 

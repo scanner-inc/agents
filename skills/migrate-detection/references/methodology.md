@@ -211,7 +211,7 @@ Most source repos ship example events:
 - **Sentinel** — `eventGroupingSettings.aggregationKind` and test scenarios in adjacent JSON.
 - **Elastic** — `tests/` adjacent.
 
-Translate into Scanner `dataset_inline` JSONL. Sanitise IDs, ARNs, IPs to canonical examples. Each row needs an RFC-3339 `timestamp`.
+Translate into Scanner `dataset_inline` JSONL, and set `dataset_format` explicitly (`FlatTable` for flat column-table events, `RawJson` for raw nested events). Sanitise IDs, ARNs, IPs to canonical examples. Each row needs an RFC-3339 timestamp in the reserved `@scnr.datetime` field — a flat key under `FlatTable`, nested (`"@scnr": {"datetime": ...}`) under `RawJson`. Reserved `@scnr` fields like `source_type` follow the same rule.
 
 If the source has no test fixtures, synthesise based on sample events pulled from MCP in Phase 5.
 

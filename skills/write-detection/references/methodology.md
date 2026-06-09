@@ -15,10 +15,9 @@ If the user is describing an existing rule with FPs, route to `/tune-detection`.
 
 ## Phase 2: Discover schema and the source-type identifier
 
-1. Call Scanner MCP `get_scanner_context()` first — returns the context token, available indexes, and the `source_types` block listing which `@scnr.source_type` / `%ingest.source_type` values are populated and at what volume.
+1. Call Scanner MCP `get_scanner_context()` first — returns the context token, available indexes, and the `source_types` block listing which `@scnr.source_type` values are populated and at what volume.
 2. **Pick the source filter** — this is what goes at the top of the rule's query. Decide in this order:
    - **Natively-supported source** — `get_scanner_context.source_types` shows the source-type for this log family (e.g., `aws:cloudtrail`, `okta`, `auth0:audit`). Use `@scnr.source_type="<value>"`. The rule will work across every index that carries this source-type.
-   - **User-added source via custom transformation** — the source shows up under `%ingest.source_type` instead. Use `%ingest.source_type="<value>"`.
    - **`custom:generic` source-type** (Scanner doesn't natively support this log family). Source-type filtering is useless — `get_scanner_context` will show `custom:generic` for several different sources at once. Instead, **sample real events** (`@index=<candidate-index> | head 3` via MCP) and find the field that uniquely identifies *this* source within the index. Common candidates: `vendor`, `provider`, `product`, `log_type`, `_source`, or whatever bespoke field the customer added. Use that as the rule's first filter.
 3. `get_top_columns(indices=["<index>"])` to discover the **real** field names used in this tenant for the rest of the rule's predicates. Different sources nest fields differently (`userIdentity.arn` vs `principal.user.email` vs `actor.id`).
 4. Sample 2–3 actual events to confirm field shapes. Read the schema, not the docs — schema drift is real.
@@ -56,7 +55,7 @@ Apply `yaml_schema.md` mechanically:
 - `description:` — what it detects, references (CVE / blog / report), known false-positive scenarios.
 - `enabled: Staging` — always Staging on first write.
 - `severity:` — per `severity_policy.md`.
-- `query_text:` — multi-line `|-` block. Use a source-type filter (`@scnr.source_type=...`, `%ingest.source_type=...`, or the bespoke identifier you discovered in Phase 2). Include `@index={UUID|"alias"}` only if Phase 2 identified a scoping reason — aliases alone parse-error in detection rules; resolve UUIDs via `@index=<alias> | head 1 | table(@index, @index_id)`.
+- `query_text:` — multi-line `|-` block. Use a source-type filter (`@scnr.source_type=...`, or the bespoke identifier you discovered in Phase 2). Include `@index={UUID|"alias"}` only if Phase 2 identified a scoping reason — aliases alone parse-error in detection rules; resolve UUIDs via `@index=<alias> | head 1 | table(@index, @index_id)`.
 - `time_range_s:` — lookback. Multiple of 60. Default 300.
 - `run_frequency_s:` — how often the engine evaluates. Multiple of 60, `<= time_range_s`. Default 60.
 - `event_sink_keys:` — per `severity_policy.md` (Medium+ → set this; Low/Info → omit).
@@ -65,7 +64,7 @@ Apply `yaml_schema.md` mechanically:
 Aggregation patterns that work well:
 
 ```scanner
-%ingest.source_type="aws:cloudtrail"
+@scnr.source_type="aws:cloudtrail"
 eventSource="iam.amazonaws.com"
 eventName=PutUserPolicy
 userAgent: "S3 Browser"
@@ -86,14 +85,16 @@ Add a `tests:` array with **2–4 tests**. Required: at least one positive (the 
 tests:
   - name: Test the rule fires when <behaviour>
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: FlatTable
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","%ingest.source_type":"aws:cloudtrail",...}
-      {"timestamp":"2026-05-15T00:02:15.000Z","%ingest.source_type":"aws:cloudtrail",...}
+      {"@scnr.datetime":"2026-05-15T00:02:30.000Z","@scnr.source_type":"aws:cloudtrail",...}
+      {"@scnr.datetime":"2026-05-15T00:02:15.000Z","@scnr.source_type":"aws:cloudtrail",...}
     expected_detection_result: true
   - name: Test no fire when <similar benign behaviour>
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: FlatTable
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","%ingest.source_type":"aws:cloudtrail",...}
+      {"@scnr.datetime":"2026-05-15T00:02:30.000Z","@scnr.source_type":"aws:cloudtrail",...}
     expected_detection_result: false
 ```
 

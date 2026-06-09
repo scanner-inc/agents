@@ -9,8 +9,8 @@ Splunk SPL is dense with macros (`` `name` `` syntax). Unwrap them first:
 | Splunk macro | Meaning | Scanner equivalent |
 |---|---|---|
 | `` `cloudtrail` `` | `index=cloudtrail` (per `security_content/macros/cloudtrail.yml`) | `@scnr.source_type="aws:cloudtrail"` (preferred). Detection rules query all readable indexes by default; only add `@index={UUID|"alias"}` if the customer needs explicit prod/staging scoping. |
-| `` `okta` `` | Okta source | `%ingest.source_type="okta"` |
-| `` `aws_securityhub` `` | SecurityHub source | `%ingest.source_type="aws:securityhub"` |
+| `` `okta` `` | Okta source | `@scnr.source_type="okta"` |
+| `` `aws_securityhub` `` | SecurityHub source | `@scnr.source_type="aws:securityhub"` |
 | `` `security_content_ctime(field)` `` | Format epoch field as readable time | Drop — Scanner emits ISO timestamps natively |
 | `` `<rule_name>_filter` `` | Tail filter macro for tuning suppressions | Drop on initial migration; if the user has tuning entries in the macro, fold them into `query_text` as `and not …` clauses |
 
@@ -51,7 +51,7 @@ When unsure, look up the macro — locally at `~/src/security_content/macros/` i
 
 ```
 Splunk:   `cloudtrail` eventSource="iam.amazonaws.com" eventName=DeletePolicy (userAgent!=*.amazonaws.com)
-Scanner:  %ingest.source_type="aws:cloudtrail"
+Scanner:  @scnr.source_type="aws:cloudtrail"
           eventSource="iam.amazonaws.com"
           eventName=DeletePolicy
           not userAgent: ".amazonaws.com"

@@ -22,12 +22,12 @@ Sigma is the "lingua franca" of detection rules — structured YAML that's relat
 | Sigma `logsource` | Scanner mapping |
 |---|---|
 | `product: aws`, `service: cloudtrail` | `@scnr.source_type="aws:cloudtrail"` (preferred — built-in source-type, works across every index carrying CloudTrail). Only add `@index={UUID|"alias"}` if the customer needs prod/staging scoping. |
-| `product: aws`, `service: guardduty` | `%ingest.source_type="aws:guardduty"` |
-| `product: okta` | `%ingest.source_type="okta"` |
-| `product: github` | `%ingest.source_type="github"` |
-| `product: gcp`, `service: gcp.audit` | `%ingest.source_type="gcp:audit"` |
-| `product: azure`, `service: signinlogs` | `%ingest.source_type="azure:signin"` |
-| `product: m365`, `service: …` | `%ingest.source_type="m365:…"` |
+| `product: aws`, `service: guardduty` | `@scnr.source_type="aws:guardduty"` |
+| `product: okta` | `@scnr.source_type="okta"` |
+| `product: github` | `@scnr.source_type="github"` |
+| `product: gcp`, `service: gcp.audit` | `@scnr.source_type="gcp:audit"` |
+| `product: azure`, `service: signinlogs` | `@scnr.source_type="azure:signin"` |
+| `product: m365`, `service: …` | `@scnr.source_type="m365:…"` |
 | `product: windows`, `service: security` | Depends on user's ingest path (Sysmon, WinEvent forwarder, etc.). Confirm via `get_top_columns`. |
 
 If unsure, ask the user once per session and cache the mapping.
@@ -52,7 +52,7 @@ detection:
 →
 
 ```scanner
-%ingest.source_type="aws:cloudtrail"
+@scnr.source_type="aws:cloudtrail"
 eventSource="cloudtrail.amazonaws.com"
 eventName: ("StopLogging" "UpdateTrail" "DeleteTrail")
 ```
@@ -71,7 +71,7 @@ detection:
 →
 
 ```scanner
-%ingest.source_type="aws:cloudtrail"
+@scnr.source_type="aws:cloudtrail"
 eventName="ConsoleLogin"
 not sourceIPAddress: "10."
 ```
@@ -92,7 +92,7 @@ detection:
 →
 
 ```scanner
-%ingest.source_type="aws:cloudtrail"
+@scnr.source_type="aws:cloudtrail"
 eventName: ("PutBucketAcl" "PutBucketPolicy")
 ```
 
@@ -199,7 +199,7 @@ description: |-
   Migrated from Sigma rule `4db60cc0-36fb-42b7-9b58-a5b53019fb74`.
 severity: Medium
 query_text: |-
-  %ingest.source_type="aws:cloudtrail"
+  @scnr.source_type="aws:cloudtrail"
   eventSource="cloudtrail.amazonaws.com"
   eventName: ("StopLogging" "UpdateTrail" "DeleteTrail")
   | stats
@@ -218,13 +218,15 @@ tags:
 tests:
   - name: Test fires on StopLogging
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","%ingest.source_type":"aws:cloudtrail","eventSource":"cloudtrail.amazonaws.com","eventName":"StopLogging","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"awsRegion":"us-west-2"}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventSource":"cloudtrail.amazonaws.com","eventName":"StopLogging","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"awsRegion":"us-west-2"}
     expected_detection_result: true
   - name: Test does not fire on benign CreateTrail
     now_timestamp: "2026-05-15T00:03:00.000Z"
+    dataset_format: RawJson
     dataset_inline: |
-      {"timestamp":"2026-05-15T00:02:30.000Z","%ingest.source_type":"aws:cloudtrail","eventSource":"cloudtrail.amazonaws.com","eventName":"CreateTrail","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"awsRegion":"us-west-2"}
+      {"@scnr":{"datetime":"2026-05-15T00:02:30.000Z","source_type":"aws:cloudtrail"},"eventSource":"cloudtrail.amazonaws.com","eventName":"CreateTrail","userIdentity":{"arn":"arn:aws:iam::123456789012:user/JohnDoe"},"awsRegion":"us-west-2"}
     expected_detection_result: false
 ```
 
