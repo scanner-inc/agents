@@ -79,6 +79,32 @@ To browse, enable / disable, or uninstall later:
 /plugin uninstall scanner-soc-skills@scanner-soc-skills
 ```
 
+## Using these skills in Cursor
+
+Cursor's [Agent Skills](https://cursor.com/docs/skills) format is the same `SKILL.md` + `references/` + `scripts/` + `assets/` structure these skills already use, so no translation is needed — Cursor reads the files as-is. Cursor also explicitly auto-discovers skills from `~/.claude/skills/` and `.claude/skills/` for compatibility.
+
+Three install paths, fastest first:
+
+**Symlink (recommended for global use).** Point Cursor's global skills directory at the cloned repo:
+
+```bash
+mkdir -p ~/.cursor/skills
+ln -s "$(pwd)/skills" ~/.cursor/skills/scanner-soc-skills
+```
+
+Cursor walks the linked directory recursively, so all the skills above become available in every Cursor project. Use `cp -r` instead of `ln -s` if you'd rather have an independent copy.
+
+**Cursor's GitHub remote install (UI-driven).** Open Cursor → Settings → Rules → **Add Rule → Remote Rule (Github)** and paste the URL of this repo. Cursor fetches and discovers the skills automatically.
+
+**Per-project install.** If you only want the skills in specific Cursor projects, copy them into each project's `.cursor/skills/` directory:
+
+```bash
+mkdir -p .cursor/skills
+cp -r /path/to/agents/skills/* .cursor/skills/
+```
+
+Once installed, type `/` in Cursor's Agent chat and search for the skill name (e.g. `triage-alert`, `investigate`), or invoke by description in natural language. Scanner MCP must be configured in Cursor's MCP settings — same URL/token as Claude Code; the tool surface is identical across both clients.
+
 ## Updating
 
 Pull the repo and reload:
