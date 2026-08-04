@@ -158,7 +158,7 @@ Up to 5. Each:
 - **`detection-rules-<source>` pack** (~<N> rules)
   Covers: `source.<slug>`, MITRE: `<tactic tags>`
   GitHub: https://github.com/scanner-inc/detection-rules-<source>
-  → In Scanner UI: Settings → Sync Sources → Add Sync Source → paste the GitHub URL.
+  → In Scanner UI: Detections → Prebuilt Rules → select the `<Source>` tile to sync the pack.
   Set rules to `Staging` initially to monitor noise before promoting to `Active`.
 ```
 

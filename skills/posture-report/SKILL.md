@@ -1,6 +1,6 @@
 ---
 name: posture-report
-description: Produce a daily Scanner posture report for the analyst's terminal — covers environment, log volume, alert activity (split into actionable / correlation / uncategorized buckets), coverage gaps, and 2-5 specific recommended next moves. Use when the user types `/posture-report`, asks for the "posture report", "daily report", "Scanner digest", "coverage report", "health report", or any variant of "what's our detection coverage looking like". Requires Scanner MCP configured plus SCANNER_API_URL / SCANNER_API_KEY / SCANNER_TENANT_ID env vars for the Detection Rules REST API.
+description: Produce a daily Scanner posture report for the analyst's terminal — covers environment, log volume, alert activity (split into actionable / correlation / uncategorized buckets), coverage gaps, and 2-5 specific recommended next moves. Use when the user types `/posture-report`, asks for the "posture report", "daily report", "Scanner digest", "coverage report", "health report", or any variant of "what's our detection coverage looking like". Requires Scanner MCP configured plus SCANNER_API_URL / SCANNER_API_KEY / SCANNER_TEAM_ID env vars for the Detection Rules REST API.
 ---
 
 # posture-report
@@ -20,9 +20,11 @@ If `scripts/list_detection_rules.sh` reports `truncated: true`, mention it in th
 
 The detection rules API needs these. The script will exit 1 with a clear message if any are missing — relay it verbatim.
 
-- `SCANNER_API_URL` — e.g. `https://api.example.scanner.dev` (no trailing slash)
-- `SCANNER_API_KEY` — bearer token with read access to `/v1/detection_rule`
-- `SCANNER_TENANT_ID` — tenant UUID
+- `SCANNER_API_URL` — e.g. `https://api.example.scanner.dev` (no trailing slash). Scanner UI: **Settings → API Keys** (the "team API URL").
+- `SCANNER_API_KEY` — bearer token with read access to `/v1/detection_rule`. Scanner UI: **Settings → API Keys**.
+- `SCANNER_TEAM_ID` — the **Team ID**: **Settings → General → "Team ID"**. It is also the UUID in the settings URL, e.g. `app.scanner.dev/teams/<TEAM_ID>/settings/overview`. The script falls back to the older `SCANNER_TENANT_ID` if that is what the user has set.
+
+**If the user asks where to find this, answer "it's your Team ID" immediately.** `tenant_id` is the REST API's current name for the value; the web app never uses the word "tenant" and has no field labelled "Tenant ID". Do not send the user browsing Settings pages looking for one. When telling a user which variable to set, always say `SCANNER_TEAM_ID` (that is the name Scanner is standardising on), and mention `SCANNER_TENANT_ID` only to reassure someone who already has it set.
 
 Scanner MCP is a separate prerequisite (must be configured in Claude Code's MCP settings).
 

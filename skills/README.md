@@ -42,11 +42,34 @@ Twelve SOC and detection-engineering slash commands packaged as a [Claude Code p
 - **Scanner MCP** configured in Claude Code — every Scanner-backed skill calls `get_scanner_context` and `execute_query`. See [Scanner MCP docs](https://scanner.dev/docs). `/write-vrl` does not need Scanner MCP.
 - **Environment variables** (set in your shell or `~/.claude/settings.json`):
   - `SCANNER_API_URL`, `SCANNER_API_KEY` — needed by `/posture-report`, `/recommend-detections`, `/write-detection`, `/tune-detection`, `/migrate-detection`, `/write-correlation`, and any `/investigate` question that hits the Detection Rules REST API. The detection-engineering skills use these for `scanner-cli validate` and `scanner-cli run-tests`.
-  - `SCANNER_TENANT_ID` — needed by `/posture-report` and `/recommend-detections` for the rule-inventory REST API call.
+  - `SCANNER_TEAM_ID` — your Scanner **Team ID**. Needed by `/posture-report`, `/recommend-detections`, `/tune-detection` (rule lookup by name), and the Lookup Tables API used by `/write-vrl` and `/write-detection`. If you already have `SCANNER_TENANT_ID` set, the scripts still read it as a fallback; see [Where to find these values](#where-to-find-these-values) below.
   - `SCANNER_DETECTIONS_DIR` — comma-separated absolute paths to the user's detection-rule GitHub repos. Read by `/write-detection`, `/tune-detection`, `/migrate-detection`, `/write-correlation`, and `/recommend-detections`. If unset, each skill asks per-invocation.
   - `OTX_API_KEY`, `ABUSECH_AUTH_KEY` — optional, used by `/lookup-ioc`, `/threat-hunt`, and IOC enrichment inside `/triage-alert`. Each source degrades gracefully if its key is missing.
 - **`scanner-cli`** on PATH for the detection-engineering skills — used for offline rule validation and unit-test execution. Install from `~/src/scanner-cli/` via Poetry (the Poetry entry point is `scanner-cli`).
 - **`vector` binary** for `/write-vrl` only — used to run drafted VRL against sample input before handing the program back. Looks on PATH then at `~/.vector/bin/vector`. Install with `curl --proto '=https' --tlsv1.2 -sSf https://sh.vector.dev | bash` or see <https://vector.dev/docs/setup/installation/>.
+
+### Where to find these values
+
+In the Scanner web app (`app.scanner.dev`), click your team name in the top-left, then **Settings**:
+
+| Env var | Where |
+|---|---|
+| `SCANNER_API_URL` | **Settings → API Keys** (the "team API URL", e.g. `https://api.us-east-1.scanner.dev`). No trailing slash. |
+| `SCANNER_API_KEY` | **Settings → API Keys** → create a key with read access to `/v1/detection_rule`. |
+| `SCANNER_TEAM_ID` | **Settings → General → "Team ID"**. |
+
+The Team ID also appears in the settings URL, so the fastest way to grab it is straight from the address bar:
+
+```
+app.scanner.dev/teams/00000000-0000-0000-0000-000000000000/settings/overview
+                      ^-- this is SCANNER_TEAM_ID
+```
+
+#### `SCANNER_TEAM_ID` vs `SCANNER_TENANT_ID`
+
+**Use `SCANNER_TEAM_ID`.** "Team ID" is what the UI has always called this value and what Scanner is standardising on everywhere, including a planned rename of the API's `tenant_id` parameter.
+
+`SCANNER_TENANT_ID` is the older name. Every script still reads it as a fallback when `SCANNER_TEAM_ID` is unset, prints a one-line note on stderr telling you the new name, and carries on, so nothing breaks if you don't migrate today. On the wire the REST API parameter is still spelled `tenant_id`; it's the same UUID either way. There is no field labelled "Tenant ID" anywhere in the product, and the current API reference doesn't mention the equivalence.
 
 ### Sync flow (detection-engineering skills)
 
@@ -97,7 +120,10 @@ git -C path/to/agents pull
 - **`/plugin` doesn't exist.** Update Claude Code — plugin marketplaces are a recent feature.
 - **Skill doesn't appear after install.** Run `/reload-plugins`. If still missing, check `/plugin` → Errors tab for marketplace parse errors.
 - **Skill runs but Scanner queries fail.** Confirm Scanner MCP is configured and reachable (`get_scanner_context` should return a context token). The skills assume MCP is already set up — they don't bootstrap it.
-- **`/posture-report` complains about missing env vars.** Set `SCANNER_API_URL` / `SCANNER_API_KEY` / `SCANNER_TENANT_ID` and restart Claude Code so the new env is inherited.
+- **A skill complains about missing env vars.** Set `SCANNER_API_URL` / `SCANNER_API_KEY` / `SCANNER_TEAM_ID` (see [Where to find these values](#where-to-find-these-values)) and restart Claude Code so the new env is inherited.
+- **"Where is my Tenant ID? I can't find it in Settings."** You're looking for **Team ID**: **Settings → General**, or copy the UUID out of the settings URL. `tenant_id` is the API's current name for it; the UI never uses that word, and the env var to set is `SCANNER_TEAM_ID`.
+- **A script says "using SCANNER_TENANT_ID".** Harmless. It found the older variable and used it. Rename it to `SCANNER_TEAM_ID` when convenient and the note goes away.
+- **A skill sends you to a Settings page that isn't there.** Settings is flat: General, Roles, Members, Usage, API Keys, Event Sinks, Integrations. ("Team" and "Integrations" appear as group headings in the sidebar, but the pages themselves are one click deep.) Detection rules are not in it: your rules are at **Detections → Team Rules**, OOB packs at **Detections → Prebuilt Rules**, connected repos at **Detections → Synced Repositories**, and lookup tables / transformations under **Library**. File an issue if a skill still gets this wrong.
 
 ## Layout
 

@@ -5,9 +5,16 @@
 # results as a single JSON array on stdout (NOT the raw paginated wrappers).
 #
 # Required env:
-#   SCANNER_API_URL   e.g. https://api.example.scanner.dev (no trailing slash)
-#   SCANNER_API_KEY    Bearer token with read access to /v1/detection_rule
-#   SCANNER_TENANT_ID  Tenant UUID
+#   SCANNER_API_URL    e.g. https://api.example.scanner.dev (no trailing slash).
+#                      Scanner UI: Settings > API Keys.
+#   SCANNER_API_KEY    Bearer token with read access to /v1/detection_rule.
+#                      Scanner UI: Settings > API Keys.
+#   SCANNER_TEAM_ID    Your Team ID: Settings > General > "Team ID". It is also
+#                      the UUID in the settings URL,
+#                      app.scanner.dev/teams/<TEAM_ID>/settings/overview.
+#                      SCANNER_TENANT_ID is accepted as a fallback for now.
+#                      The REST API parameter is still spelled tenant_id on the
+#                      wire; "Team ID" is the name the product is moving to.
 #
 # Optional flags:
 #   --max-pages N      Stop after N pages (default 5; matches the n8n agent's cap).
@@ -33,12 +40,45 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-for var in SCANNER_API_URL SCANNER_API_KEY SCANNER_TENANT_ID; do
+# Team ID. SCANNER_TEAM_ID is the preferred name; SCANNER_TENANT_ID is the older
+# spelling and still works. The API query parameter stays tenant_id until the API
+# itself renames it.
+team_id="${SCANNER_TEAM_ID:-${SCANNER_TENANT_ID:-}}"
+if [[ -z "${SCANNER_TEAM_ID:-}" && -n "${SCANNER_TENANT_ID:-}" ]]; then
+  echo "note: using SCANNER_TENANT_ID. The preferred name is now SCANNER_TEAM_ID (same value)." >&2
+fi
+
+missing=""
+for var in SCANNER_API_URL SCANNER_API_KEY; do
   if [[ -z "${!var:-}" ]]; then
-    echo "error: $var not set" >&2
-    exit 1
+    missing="${missing:+$missing }$var"
   fi
 done
+if [[ -z "$team_id" ]]; then
+  missing="${missing:+$missing }SCANNER_TEAM_ID"
+fi
+if [[ -n "$missing" ]]; then
+  cat >&2 <<MSG
+error: missing required environment variable(s): $missing
+
+Where to find each value in the Scanner web app (app.scanner.dev):
+
+  SCANNER_API_URL    Settings > API Keys (the "team API URL"),
+                     e.g. https://api.us-east-1.scanner.dev  (no trailing slash)
+
+  SCANNER_API_KEY    Settings > API Keys. Needs read access to
+                     /v1/detection_rule.
+
+  SCANNER_TEAM_ID    Settings > General > "Team ID". Fastest way to get it: copy
+                     it out of the settings URL in the address bar:
+                       app.scanner.dev/teams/<TEAM_ID>/settings/overview
+                     SCANNER_TENANT_ID is still read as a fallback if that is
+                     what you already have set. The REST API parameter is spelled
+                     tenant_id on the wire, but it is the same value, and the
+                     product is standardising on "Team ID".
+MSG
+  exit 1
+fi
 
 base="${SCANNER_API_URL%/}"
 
@@ -55,7 +95,7 @@ for ((page=1; page<=max_pages; page++)); do
       --max-time 30 \
       --get \
       -H "Authorization: Bearer ${SCANNER_API_KEY}" \
-      --data-urlencode "tenant_id=${SCANNER_TENANT_ID}" \
+      --data-urlencode "tenant_id=${team_id}" \
       --data-urlencode "pagination[page_size]=1000" \
       --data-urlencode "pagination[page_token]=${token}" \
       "${base}/v1/detection_rule" \

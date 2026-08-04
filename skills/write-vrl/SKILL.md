@@ -142,7 +142,8 @@ Keep the response tight. The code block is the deliverable; everything else is c
 ## Required environment
 
 - A `vector` binary on PATH or at `~/.vector/bin/vector`. Install with `curl --proto '=https' --tlsv1.2 -sSf https://sh.vector.dev | bash` or see <https://vector.dev/docs/setup/installation/>.
-- No Scanner API access is required — this skill operates entirely on the user's sample data locally.
+- No Scanner API access is required for authoring and testing VRL — that part operates entirely on the user's sample data locally.
+- `SCANNER_API_URL`, `SCANNER_API_KEY`, `SCANNER_TEAM_ID` — needed **only** by `scripts/list_lookup_tables.sh` (surveying existing IOC tables during an enrichment). Everything else in this skill runs without them. `SCANNER_API_URL` / `SCANNER_API_KEY` come from **Settings → API Keys**; `SCANNER_TEAM_ID` is the **Team ID** (**Settings → General**, or the UUID in the settings URL `app.scanner.dev/teams/<TEAM_ID>/settings/overview`). The API path segment is still `/tenant/<id>` and the UI has no "Tenant ID" field, so state the Team ID equivalence outright instead of sending the user browsing Settings. The script accepts the older `SCANNER_TENANT_ID` as a fallback. If the value is missing, skip the survey, say so, and keep authoring.
 
 ## Layout
 

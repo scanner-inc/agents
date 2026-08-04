@@ -12,12 +12,25 @@
 #   scripts/list_lookup_tables.sh --summary          # one line per table
 #   scripts/list_lookup_tables.sh --ioc              # filter to IOC-looking tables
 #
-# Required env: SCANNER_API_URL, SCANNER_API_KEY, SCANNER_TENANT_ID
+# Required env (all three; in the Scanner web app at app.scanner.dev):
+#   SCANNER_API_URL    Settings > API Keys ("team API URL")
+#   SCANNER_API_KEY    Settings > API Keys
+#   SCANNER_TEAM_ID    Settings > General > "Team ID", or the UUID in the settings
+#                      URL: app.scanner.dev/teams/<TEAM_ID>/settings/overview.
+#                      SCANNER_TENANT_ID is accepted as a fallback for now. The
+#                      API path segment is still /tenant/<id> on the wire; same
+#                      value, and the product is standardising on "Team ID".
 set -euo pipefail
 
-: "${SCANNER_API_URL:?SCANNER_API_URL not set — point at your team API URL from Settings > API Keys}"
-: "${SCANNER_API_KEY:?SCANNER_API_KEY not set — bearer token from Settings > API Keys}"
-: "${SCANNER_TENANT_ID:?SCANNER_TENANT_ID not set — tenant UUID from Settings > General}"
+: "${SCANNER_API_URL:?SCANNER_API_URL not set. Team API URL, from Settings > API Keys, e.g. https://api.us-east-1.scanner.dev}"
+: "${SCANNER_API_KEY:?SCANNER_API_KEY not set. Bearer token, from Settings > API Keys}"
+
+# SCANNER_TEAM_ID is the preferred name; SCANNER_TENANT_ID still works.
+TEAM_ID="${SCANNER_TEAM_ID:-${SCANNER_TENANT_ID:-}}"
+if [[ -z "${SCANNER_TEAM_ID:-}" && -n "${SCANNER_TENANT_ID:-}" ]]; then
+  echo "note: using SCANNER_TENANT_ID. The preferred name is now SCANNER_TEAM_ID (same value)." >&2
+fi
+: "${TEAM_ID:?SCANNER_TEAM_ID not set. This is your Team ID: Settings > General > \"Team ID\", or the UUID in the settings URL app.scanner.dev/teams/<TEAM_ID>/settings/overview. SCANNER_TENANT_ID is still read as a fallback.}"
 
 if ! command -v jq &>/dev/null; then
   echo "Error: jq is required" >&2
@@ -27,7 +40,7 @@ fi
 MODE="${1:-json}"
 
 # Strip trailing slash on the base URL just in case.
-BASE="${SCANNER_API_URL%/}/v1/unstable/lookup_table_file/tenant/${SCANNER_TENANT_ID}"
+BASE="${SCANNER_API_URL%/}/v1/unstable/lookup_table_file/tenant/${TEAM_ID}"
 
 RESPONSE="$(curl --silent --show-error --fail-with-body --max-time 30 -G "${BASE}" -H "Authorization: Bearer ${SCANNER_API_KEY}" 2>&1)" || {
   cat >&2 <<MSG

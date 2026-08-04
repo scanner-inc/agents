@@ -1,8 +1,10 @@
 # Scanner OOB detection-rule packs
 
-Scanner publishes pre-built detection-rule packs on GitHub under the `scanner-inc` org, one repo per log source. The user enables a pack via the Scanner web UI: **Settings → Sync Sources → Add Sync Source → paste the GitHub URL**. Scanner then syncs that repo on its normal schedule.
+Scanner publishes pre-built detection-rule packs on GitHub under the `scanner-inc` org, one repo per log source. The user enables a pack at **Detections → Prebuilt Rules** (left sidebar, under *Explore*): select the source tile (1Password, AWS CloudTrail, Okta, …) and Scanner syncs that repository to the team. Already-synced sources show a green check on their tile, so that page doubles as ground truth for which packs are enabled. Synced repos are then listed under **Detections → Synced Repositories**, which is also where an arbitrary (non-Scanner) rules repo gets connected.
 
 This file hardcodes the canonical list (small, stable) so the skill can recommend packs without needing the user to have any pack cloned locally. Each pack is its own GitHub repo at `scanner-inc/detection-rules-<source>`. (Per the no-required-adjacent-repos rule.) If new packs ship, add a row here.
+
+The table can lag the product: **Detections → Prebuilt Rules** is the authoritative list of what's available and what's already synced (each tile links to `…/prebuilt-rules/detection-rules-<source>`, and synced ones carry an added badge). Table last reconciled against that page 2026-08-05. When recommending, say "if you don't see it on the Prebuilt Rules page, tell me and I'll fetch the repo directly" rather than asserting a pack doesn't exist.
 
 ## Available packs (as of 2026-05)
 
@@ -20,6 +22,7 @@ This file hardcodes the canonical list (small, stable) so the skill can recommen
 | `detection-rules-github` | https://github.com/scanner-inc/detection-rules-github | `github:audit`, `github` | initial_access, persistence (OAuth apps), exfiltration |
 | `detection-rules-gsuite` | https://github.com/scanner-inc/detection-rules-gsuite | `gsuite`, `google_workspace` | initial_access, credential_access |
 | `detection-rules-microsoft-365` | https://github.com/scanner-inc/detection-rules-microsoft-365 | `m365`, `office365` | credential_access, collection |
+| `detection-rules-notion` | https://github.com/scanner-inc/detection-rules-notion | `notion` | collection, exfiltration |
 | `detection-rules-okta` | https://github.com/scanner-inc/detection-rules-okta | `okta` | initial_access, credential_access |
 | `detection-rules-salesforce` | https://github.com/scanner-inc/detection-rules-salesforce | `salesforce` | exfiltration, collection |
 | `detection-rules-sentinelone` | https://github.com/scanner-inc/detection-rules-sentinelone | `sentinelone`, `s1` | execution, persistence, defense_evasion |
@@ -38,7 +41,7 @@ This file hardcodes the canonical list (small, stable) so the skill can recommen
 4. Emit a recommendation per remaining pack with:
    - Pack name + GitHub URL (hardcoded from this table — no local clone needed).
    - The matching source-type and event volume from `get_scanner_context`.
-   - UI enable instruction: "Settings → Sync Sources → Add Sync Source → paste URL. Start in `Staging`."
+   - UI enable instruction: "Detections → Prebuilt Rules → select the `<Source>` tile to sync the pack. Start in `Staging`."
 
 ## Fetching a single OOB rule (without cloning)
 

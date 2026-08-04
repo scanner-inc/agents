@@ -18,9 +18,22 @@ If they want a correlation rule, route to `/write-correlation`.
 ## Required environment
 
 - **Scanner MCP** configured.
-- `SCANNER_API_URL`, `SCANNER_API_KEY` — for `scanner-cli`.
+- `SCANNER_API_URL`, `SCANNER_API_KEY` — for `scanner-cli`, and for the Detection Rule API scripts below. Scanner UI: **Settings → API Keys** (`SCANNER_API_URL` is the "team API URL", no trailing slash).
+- `SCANNER_TEAM_ID` — only needed by `scripts/list_detection_rules.sh` and by `scripts/fetch_detection_rule.sh --name` (rule lookup by name, i.e. the branch that catches UI-created rules). `--id <uuid>` does not need it. **This is the "Team ID" from the Scanner UI**: see below.
 - `SCANNER_DETECTIONS_DIR` (recommended) — comma-separated absolute paths to the user's local rule repos. Falls back to asking per-invocation.
 - `scanner-cli` on PATH.
+
+### `SCANNER_TEAM_ID` is the Team ID
+
+If a script exits with `SCANNER_TEAM_ID not set`, tell the user this and nothing else:
+
+> `SCANNER_TEAM_ID` is your Scanner **Team ID**: **Settings → General → "Team ID"**. It's also the UUID in the settings URL, so you can copy it straight from the address bar: `app.scanner.dev/teams/<TEAM_ID>/settings/overview`.
+
+The REST API parameter is currently named `tenant_id`, but the web app only ever labels the value **Team ID**, and Scanner is standardising on that name (the API parameter is slated to follow). There is no field, page, or setting called "Tenant ID" anywhere in the product, and the API reference doesn't state the equivalence. Never send the user hunting through Settings pages for one, and never guess at other Settings locations.
+
+The scripts also accept the older `SCANNER_TENANT_ID` and print a note pointing at the new name. If a user has only that set, everything works: don't ask them to rename anything mid-task, just use `SCANNER_TEAM_ID` when you tell someone what to set for the first time.
+
+If the Team ID is missing entirely, you can still make progress: rule lookup by `--id`, local repo search, `scanner-cli`, and every Scanner MCP query all work without it. Say what is degraded (name-based lookup of UI-created rules) rather than stopping the whole skill.
 
 ## Workflow
 
@@ -54,7 +67,7 @@ Follow the full procedure in `references/methodology.md`. The short version:
 If the rule comes from a `scanner-inc/detection-rules-*` pack (each pack is its own GitHub repo — see `recommend-detections/references/oob_packs.md`), it's **read-only**. The user cannot edit it in place. Switch to the fork-and-disable workflow:
 
 1. **Obtain the OOB YAML.** Default: `curl -sSL "https://raw.githubusercontent.com/scanner-inc/detection-rules-<source>/main/rules/<file>.yml"`. (Or, if the user has cloned the pack locally and points you at a path, read it from there.) **Copy** the YAML into one of the paths in `SCANNER_DETECTIONS_DIR`. Suggested path: `rules/<source>/<orig_filename>`.
-2. Tell the user explicitly: *"I'm tuning a clone at `<path>`. After you push, you'll need to **disable the original OOB rule in the Scanner UI** (Settings → Detection Rules → search for `<name>` → toggle off). The UI is the only place the OOB toggle exists."*
+2. Tell the user explicitly: *"I'm tuning a clone at `<path>`. After you push, you'll need to **disable the original OOB rule in the Scanner UI**: go to **Detections → Team Rules**, filter for `<name>`, select the rule, and set its state to `Paused`. The UI is the only place that toggle exists."*
 3. Continue tuning the clone in all subsequent steps.
 
 The cloned-and-tuned rule overrides the (disabled) OOB rule once the GitHub app syncs.

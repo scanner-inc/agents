@@ -74,7 +74,7 @@ When a constituent is an OOB rule (from a `scanner-inc/detection-rules-*` pack �
 ### Preferred — fork-and-disable
 
 1. **Obtain the OOB YAML.** Default: `curl -sSL "https://raw.githubusercontent.com/scanner-inc/detection-rules-<source>/main/rules/<file>.yml"` (list available files via the GitHub contents API if needed). Or, if the user gives you a local path to the cloned pack, read it from there. **Copy** the YAML into one of the user's private repos in `SCANNER_DETECTIONS_DIR`. The skill writes the copy and inserts the `correlation.<custom_label>` tag.
-2. Tell the user: *"You'll need to **disable the original OOB rule in the Scanner UI** (Settings → Detection Rules → search for `<name>` → toggle off). The Scanner UI is the only place the OOB toggle exists. Once disabled, your private clone takes over."*
+2. Tell the user: *"You'll need to **disable the original OOB rule in the Scanner UI**: go to **Detections → Team Rules**, filter for `<name>`, select the rule, and set its state to `Paused`. The Scanner UI is the only place that toggle exists. Once paused, your private clone takes over."*
 3. The private clone is now a normal user-controlled rule — it can be tuned, re-tagged, etc.
 
 ### Lighter-weight — match by `name`

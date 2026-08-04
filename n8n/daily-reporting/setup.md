@@ -28,7 +28,7 @@ Create these credentials in n8n's **Credentials** UI. Names must match the refer
    * **Schedule Trigger**: cron is `0 8 * * *` (08:00 UTC daily). Adjust to your timezone.
    * **Anthropic Chat Model**: credential set to "Anthropic account". Model is `claude-opus-4-7`.
    * **Scanner MCP**: endpoint URL is your tenant's MCP URL (replace `mcp.your-env.scanner.dev` with the real hostname). Credential is "Scanner API/MCP Bearer Auth account".
-   * **Detection Rules API**: URL is `https://api.your-env.scanner.dev/v1/detection_rule` (replace `your-env` with your tenant hostname). Credential is "Scanner API/MCP Bearer Auth account". In Query Parameters, replace `REPLACE_WITH_TENANT_UUID` on the `tenant_id` parameter with your actual tenant UUID.
+   * **Detection Rules API**: URL is `https://api.your-env.scanner.dev/v1/detection_rule` (replace `your-env` with your tenant hostname). Credential is "Scanner API/MCP Bearer Auth account". In Query Parameters, replace `REPLACE_WITH_TENANT_UUID` on the `tenant_id` parameter with your actual tenant UUID. **That UUID is your Team ID**: find it under **Settings → General → "Team ID"**, or copy it out of the settings URL (`app.scanner.dev/teams/<TEAM_ID>/settings/overview`). The API parameter is currently named `tenant_id` and the UI only ever labels it Team ID; there is no "Tenant ID" field in the product. Scanner is standardising on "Team ID", so expect the API parameter to be renamed at some point (the value doesn't change).
    * **Daily Report Agent**: system message field contains the full body of `prompts/reporting-agent.md`. Paste it if the import did not populate it.
    * **Send a message**: channel ID is your reporting Slack channel.
 

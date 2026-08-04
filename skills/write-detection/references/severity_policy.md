@@ -42,7 +42,12 @@ event_sink_keys:
   - high_severity_alerts
 ```
 
-Customers configure which actual destinations (Slack channel, PagerDuty service, email, SOAR webhook) those keys map to in the Scanner UI under Settings → Event Sinks. The skill never edits sink mappings — only the keys.
+Two separate things live in the UI, and it's worth keeping them straight when writing a hand-off:
+
+- **The sinks themselves** (a Slack channel, PagerDuty service, email address, SOAR webhook) are defined and listed under **Settings → Event Sinks**.
+- **The mapping from a key like `high_severity_alerts` to one of those sinks** is per synced repository: **Detections → Synced Repositories → click the synced repository → "Manage" in the side panel → "Event Sink Keys"**. That's where a customer wires up a key this skill emits.
+
+The skill never edits sinks or their mappings, only the keys in the YAML. If a rule ships with a key the customer hasn't mapped yet, say so in the hand-off and point at the Event Sink Keys section above.
 
 A rule can ship to multiple sinks:
 

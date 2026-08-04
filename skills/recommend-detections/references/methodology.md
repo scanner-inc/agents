@@ -195,7 +195,7 @@ For each ingested source-type in the tenant (from `get_scanner_context.source_ty
 - **`detection-rules-okta` pack**
   Covers: `source.okta`, MITRE: `tactics.ta0001.initial_access`, `tactics.ta0006.credential_access`
   GitHub: https://github.com/scanner-inc/detection-rules-okta
-  → In Scanner UI: Settings → Sync Sources → Add Sync Source → paste the URL.
+  → In Scanner UI: Detections → Prebuilt Rules → select the Okta tile to sync the pack.
   We recommend setting all new rules to `Staging` first to monitor for noise before promoting to `Active`.
 ```
 

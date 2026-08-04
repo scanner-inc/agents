@@ -38,13 +38,13 @@ The user names a rule (by `name` or `detection_rule_id`). Search, in order:
 The rule exists only in the tenant — it was created in the Scanner web UI, not synced from a git repo. **It is still fully editable in the UI**: the user can change the query, severity, tags, alert template, event-sink mapping, etc. directly. Present **three** options to the user and let them pick:
 
 **A. Edit in the Scanner web UI** (quickest, no commit/push round-trip):
-- Settings → Detection Rules → search for the rule by name → Edit.
+- **Detections → Team Rules** → filter by name → select the rule → Edit.
 - Tweak the query (apply the FP/TP-informed tuning patch from Phase 5 — extra filter, threshold, dedup window, severity downgrade).
 - Save. Change takes effect immediately.
 - This is the right call for small ad-hoc tweaks where the user doesn't need a change-management trail.
 
 **B. Disable / delete in the Scanner web UI** (right if the rule shouldn't run at all):
-- Settings → Detection Rules → search by name → Disable or Delete.
+- **Detections → Team Rules** → filter by name → select the rule → set its state to `Paused` (paused rules do not run), or delete it.
 - Use this when the FP/TP classification was 100% FP and the rule has no salvageable signal (e.g., a debug/test rule that got promoted).
 
 **C. Convert to a git-tracked YAML** (for production-quality rules where change management matters):

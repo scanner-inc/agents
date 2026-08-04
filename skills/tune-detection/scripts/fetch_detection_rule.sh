@@ -6,9 +6,17 @@
 # via the Scanner UI (and therefore isn't in any local repo).
 #
 # Required env:
-#   SCANNER_API_URL    e.g. https://api.example.scanner.dev (no trailing slash)
-#   SCANNER_API_KEY    Bearer token with read access to /v1/detection_rule
-#   SCANNER_TENANT_ID  Tenant UUID
+#   SCANNER_API_URL    e.g. https://api.example.scanner.dev (no trailing slash).
+#                      Scanner UI: Settings > API Keys.
+#   SCANNER_API_KEY    Bearer token with read access to /v1/detection_rule.
+#                      Scanner UI: Settings > API Keys.
+#   SCANNER_TEAM_ID    Required for --name only (the list-and-filter path).
+#                      Your Team ID: Settings > General > "Team ID". It is also
+#                      the UUID in the settings URL,
+#                      app.scanner.dev/teams/<TEAM_ID>/settings/overview.
+#                      SCANNER_TENANT_ID is accepted as a fallback for now.
+#                      The REST API parameter is still spelled tenant_id on the
+#                      wire; "Team ID" is the name the product is moving to.
 #
 # Resolution order:
 #   --id <uuid>      → GET /v1/detection_rule/{id} directly
@@ -41,11 +49,46 @@ if [[ -z "$mode" || -z "$arg" ]]; then
   exit 3
 fi
 
-for var in SCANNER_API_URL SCANNER_API_KEY SCANNER_TENANT_ID; do
+# The Team ID is only consumed by the --name path (it delegates to
+# list_detection_rules.sh). Don't block a --id lookup on it.
+# SCANNER_TEAM_ID is the preferred name; SCANNER_TENANT_ID still works.
+team_id="${SCANNER_TEAM_ID:-${SCANNER_TENANT_ID:-}}"
+if [[ -z "${SCANNER_TEAM_ID:-}" && -n "${SCANNER_TENANT_ID:-}" ]]; then
+  echo "note: using SCANNER_TENANT_ID. The preferred name is now SCANNER_TEAM_ID (same value)." >&2
+fi
+
+missing=""
+for var in SCANNER_API_URL SCANNER_API_KEY; do
   if [[ -z "${!var:-}" ]]; then
-    echo "error: $var not set" >&2; exit 3
+    missing="${missing:+$missing }$var"
   fi
 done
+if [[ "$mode" == "name" && -z "$team_id" ]]; then
+  missing="${missing:+$missing }SCANNER_TEAM_ID"
+fi
+if [[ -n "$missing" ]]; then
+  cat >&2 <<MSG
+error: missing required environment variable(s): $missing
+
+Where to find each value in the Scanner web app (app.scanner.dev):
+
+  SCANNER_API_URL    Settings > API Keys (the "team API URL"),
+                     e.g. https://api.us-east-1.scanner.dev  (no trailing slash)
+
+  SCANNER_API_KEY    Settings > API Keys. Needs read access to
+                     /v1/detection_rule.
+
+  SCANNER_TEAM_ID    Settings > General > "Team ID". Fastest way to get it: copy
+                     it out of the settings URL in the address bar:
+                       app.scanner.dev/teams/<TEAM_ID>/settings/overview
+                     SCANNER_TENANT_ID is still read as a fallback if that is
+                     what you already have set. The REST API parameter is spelled
+                     tenant_id on the wire, but it is the same value, and the
+                     product is standardising on "Team ID".
+                     Needed here only for --name; --id works without it.
+MSG
+  exit 3
+fi
 
 base="${SCANNER_API_URL%/}"
 
