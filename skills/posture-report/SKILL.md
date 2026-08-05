@@ -11,7 +11,7 @@ Follow the full procedure in `references/methodology.md`. The short version:
 
 1. **Environment discovery** — Scanner MCP `get_scanner_context`.
 2. **Rule inventory** — run `scripts/list_detection_rules.sh` and aggregate by severity, MITRE tactic/technique, log source, last-fired.
-3. **Recent activity** — Scanner MCP `execute_query` for 24h log volume by source and 24h alert counts grouped by name + severity.
+3. **Recent activity**: Scanner MCP `execute_query` for 24h log volume (from `@index=_usage record_type=indexing_record`, *not* a full-tenant `* | groupbycount` scan) and 24h alert counts grouped by name + severity.
 4. **Gap analysis & recommended next moves** — load `references/mitre_tactics.md` for canonical tag IDs and source slugs, then compute the gap categories described in `references/methodology.md` and produce 2-5 specific recommended next moves.
 
 If `scripts/list_detection_rules.sh` reports `truncated: true`, mention it in the report.
@@ -53,12 +53,12 @@ Indices: <comma-separated list from get_scanner_context>
 
 ## Log Volume (24h)
 ```
-source_type     events
-aws:ecs         211,882,791
-aws:cloudtrail  107,253,269
-aws:lambda       74,427,683
+index                 bytes      events
+beyondtrust-use1     599 GB  662,379,054
+global-cloudtrail    411 GB  156,382,271
+notion-usw2           85 GB   59,421,882
 ```
-(One row per source_type with non-zero volume, ordered by volume descending, max 5 rows. Right-align the events column with spaces.)
+(One row per index with non-zero volume, ordered by bytes descending, max 5 rows. Right-align both numeric columns with spaces. Source: the `_usage` query in `references/methodology.md` — never a full-tenant `* | groupbycount` scan, which costs the tenant's whole daily ingest to produce less. Flag any index over 1 TB/day inline, since that changes what later queries can afford.)
 
 ## Alert Activity (24h)
 Actionable: <N> alerts (Fatal <N> · Critical <N> · High <N> · Medium <N>)
@@ -95,7 +95,7 @@ Begin the response with the `📊` line; end with the final *Recommended next mo
 
 Before the first tool call, emit 2-3 lines telling the user what's about to happen. Keep it short. Example:
 
-> Pulling your Scanner posture — environment via MCP, rule inventory via the Detection Rules API, 24h alerts and log-volume from `_detections` and source-type aggregates. Read-only.
+> Pulling your Scanner posture — environment via MCP, rule inventory via the Detection Rules API, 24h alerts from `_detections`, and 24h log volume from `_usage` indexing records. Read-only and cheap: no full-tenant log scan.
 
 This skill has no writes. Then run the workflow.
 

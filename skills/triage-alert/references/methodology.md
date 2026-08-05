@@ -18,6 +18,12 @@ Use Scanner MCP `execute_query` to collect targeted evidence around the alert's 
 
 - Query a 4-6 hour window centered on the detection time. Run separate queries for BEFORE, DURING, and AFTER if the detection is a point-in-time event.
 - Pivot on the alert's identifying fields — same source IP, user, account, role, instance, etc.
+  **Always keep at least one entity predicate in the filter**, and add `@index=<name>` to scope the
+  query. An entity-scoped pivot is index-served and costs megabytes at any tenant size; the same
+  6-hour window with no entity predicate scans ~2 TB in a multi-TB/day tenant, which is thousands of
+  times the cost for no added insight. If you need a broad "everything in this window" view, narrow
+  the window to minutes instead of dropping the predicate. See
+  `../../shared/query_cost_control.md`.
 - Think adversarially: if this were an attack, what would the attacker do next? Check for expansion indicators:
   - Privilege escalation or role changes
   - Lateral movement / unusual network connections

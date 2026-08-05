@@ -32,9 +32,9 @@ Follow the full procedure in `references/methodology.md`. The short version:
 
 1. **Restate the hypothesis.** One paragraph: what behaviour, in which source, with which fields. If the prompt is vague, ask **one** clarifying question; don't draft from imagination.
 2. **Discover schema.** Scanner MCP `get_scanner_context`, then `get_top_columns` on the candidate index. Use the real field names — don't invent paths.
-3. **Filter-clause sanity check.** Run the *first filter clause alone* via MCP. Pick the backtest window using the regime split in `references/backtesting.md`:
-   - **Needle-in-haystack** (filter likely rare): 30–90d, sometimes longer — Scanner is fast on rare-event filters even at petabyte scale, and showing the user a long-range backtest is a feature.
-   - **Broad** (filter hits more than a few hundred events / day): cap at 7d and warn the user that longer backtests get expensive.
+3. **Filter-clause sanity check.** Run the *first filter clause alone* via MCP. Size the window by **measured cost**, per `../shared/query_cost_control.md` and `references/backtesting.md`: probe ingest volume from `_usage` once, run the filter over 1h, read `n_bytes_scanned`, then take the largest window that fits the shared scan budget (the few-seconds target; numbers live in `../shared/query_cost_control.md`). Skip the ladder for a small-tier index or an obvious needle under 90d.
+   - **Needle-in-haystack** (measured selectivity < ~1%): 30–90d, often longer. Scanner is fast on rare-event filters even at petabyte scale, and a long-range backtest is a feature.
+   - **Broad** (selectivity > ~50%): derive the window from the byte budget, do *not* default to 7d. In a multi-TB/day tenant that budget is hours, not days, and a blind 7d aggregation scans tens of TB. Recommend a tighter filter rather than just a shorter window.
    Zero hits → stop, the filter is wrong or the source isn't ingested.
 4. **Draft the YAML.** Schema rules in `references/yaml_schema.md`. Always start with `# schema: https://scanner.dev/schema/scanner-detection-rule.v1.json` and `enabled: Staging` (promotion to `Active` is a human step). Severity per `references/severity_policy.md` (Medium+ → relevant `event_sink_keys`; Low/Information → no event sinks, treated as signals for correlation).
 5. **Inline tests.** 2–4 tests in `dataset_inline:` JSONL form. Set `dataset_format` explicitly (`FlatTable` for flat column-table events, `RawJson` for raw nested events) and give each event an `@scnr.datetime` timestamp (flat key under `FlatTable`; nested `"@scnr": {"datetime": ...}` under `RawJson`). Seed positive cases from the real sample events you pulled in step 3 (sanitised). At least one negative case.
@@ -44,7 +44,7 @@ Follow the full procedure in `references/methodology.md`. The short version:
    scanner-cli run-tests -f <path>
    ```
    Surface failures verbatim; iterate.
-7. **Historical backtest.** Run the *full query* (with aggregations) via Scanner MCP over the regime-appropriate window. Report expected daily firing rate. If a Medium+ rule fires more than ~10/day, propose tuning options (extra filters, threshold with `| where @q.count > N`, `dedup_window_s`, or severity downgrade to make it a signal instead).
+7. **Historical backtest.** Run the *full query* (with aggregations) via Scanner MCP over the cost-appropriate window. Report expected daily firing rate, and mark it **extrapolated** if the window was capped by the byte budget. If a Medium+ rule fires more than ~10/day, propose tuning options (extra filters, threshold with `| where @q.count > N`, `dedup_window_s`, or severity downgrade to make it a signal instead).
 8. **Hand off.** Show the file path, the `scanner-cli` commands the user can re-run, and the **GitHub-app sync flow** — see "Sync flow" below. Never recommend `scanner-cli sync`.
 
 ## Sync flow (always use this hand-off)
@@ -116,6 +116,7 @@ Keep the response tight. The YAML file itself is the deliverable; everything els
 ```
 write-detection/
 ├── SKILL.md                          # this file
+├── ../shared/query_cost_control.md   # volume probe, byte budget, selectivity ladder (shared)
 └── references/
     ├── methodology.md                # full 8-phase procedure
     ├── yaml_schema.md                # top-level fields, schema header, index specifier rules

@@ -40,11 +40,29 @@ Read `references/scanner_query.md` first if the syntax rules aren't fresh in min
 
 **Strategy: IOC sweep first, then pivot.**
 
-1. Start with broad IOC sweeps using `**: "<IOC>"` queries (one query per IOC or small batch). These are cheap because they search every field across the index range.
-2. Only on a hit: pivot to a targeted behavioral query against the specific index to build context (what happened before and after, same user or source, etc.).
-3. If sweeps are clean, you are done searching. Do not run speculative behavioral queries when there is nothing to investigate.
+1. Start with broad IOC sweeps using `**: "<IOC>"` queries (one query per IOC or small batch). An
+   IOC string is a needle by nature, so these stay cheap even over multi-year windows: the filter
+   is index-served and skips the data. This is why long hunt windows are affordable at all.
+2. Only on a hit: pivot to a targeted behavioral query against the specific index to build context
+   (what happened before and after, same user or source, etc.).
+3. If sweeps are clean, you are done searching. Do not run speculative behavioral queries when
+   there is nothing to investigate.
 
 **Query budget**: 3-6 total queries for a clean hunt; more only if you find hits.
+
+**Cost guard on the pivots.** The sweeps are safe; the step-2 pivots are where a hunt gets expensive,
+because they drop the selective IOC token and aggregate over a behavioural filter instead. Read
+`../../shared/query_cost_control.md` and apply it to every pivot:
+
+- Scope the pivot to the **hit's own narrow time range** (hours around the matching event), never
+  the full hunt window. You already know when it happened.
+- Always add `@index=<name>` on a pivot so it does not fan across every index.
+- Before a wide `groupbycount` pivot, check the target index's bytes/day from the `_usage` probe. In
+  an **extreme**-tier tenant (> 1 TB/day) an unselective pivot exceeds the scan budget within hours
+  of data, so keep an entity predicate (the user, the IP, the host from the hit) in the filter.
+
+If the hunt window itself is multi-year *and* a sweep measures unselective (check `n_bytes_scanned`
+against the volume probe), chunk it by month rather than issuing one query that scans tens of TB.
 
 ## Phase 4: Correlation and assessment
 

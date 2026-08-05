@@ -1,6 +1,6 @@
 # Claude Code skills
 
-Twelve SOC and detection-engineering slash commands packaged as a [Claude Code plugin marketplace](https://docs.claude.com/en/docs/claude-code/plugins). Drop into `claude`, type `/triage-alert <id>` (or one of the others), and the skill drives Scanner MCP for you.
+SOC and detection-engineering slash commands packaged as a [Claude Code plugin marketplace](https://docs.claude.com/en/docs/claude-code/plugins). Drop into `claude`, type `/triage-alert <id>` (or one of the others), and the skill drives Scanner MCP for you.
 
 ## Skills
 
@@ -131,6 +131,8 @@ git -C path/to/agents pull
 skills/
 ├── .claude-plugin/
 │   └── marketplace.json    # plugin marketplace manifest (one plugin: scanner-soc-skills)
+├── shared/                 # cross-skill references (not a skill itself)
+│   └── query_cost_control.md  # `_usage` volume probe, byte budget, selectivity ladder
 ├── triage-alert/
 │   ├── SKILL.md            # frontmatter + workflow
 │   └── references/         # methodology loaded on demand

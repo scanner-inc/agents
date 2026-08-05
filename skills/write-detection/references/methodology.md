@@ -16,13 +16,31 @@ If the user is describing an existing rule with FPs, route to `/tune-detection`.
 ## Phase 2: Discover schema and the source-type identifier
 
 1. Call Scanner MCP `get_scanner_context()` first — returns the context token, available indexes, and the `source_types` block listing which `@scnr.source_type` values are populated and at what volume.
-2. **Pick the source filter** — this is what goes at the top of the rule's query. Decide in this order:
+2. **Probe ingest volume once**, per `../../shared/query_cost_control.md`:
+   ```scanner
+   @index=_usage record_type=indexing_record
+   | stats sum(num_bytes_indexed) as bytes_indexed by destination_index.name
+   ```
+   over the last 24h. Note the bytes/day for the index this rule will query and its tier (small
+   < 100 GB, large 100 GB–1 TB, extreme > 1 TB). This number sets every window decision downstream,
+   and it is the difference between a 90-day backtest and a timeout. Cache it for the session.
+3. **Pick the source filter** — this is what goes at the top of the rule's query. Decide in this order:
    - **Natively-supported source** — `get_scanner_context.source_types` shows the source-type for this log family (e.g., `aws:cloudtrail`, `okta`, `auth0:audit`). Use `@scnr.source_type="<value>"`. The rule will work across every index that carries this source-type.
    - **`custom:generic` source-type** (Scanner doesn't natively support this log family). Source-type filtering is useless — `get_scanner_context` will show `custom:generic` for several different sources at once. Instead, **sample real events** (`@index=<candidate-index> | head 3` via MCP) and find the field that uniquely identifies *this* source within the index. Common candidates: `vendor`, `provider`, `product`, `log_type`, `_source`, or whatever bespoke field the customer added. Use that as the rule's first filter.
-3. `get_top_columns(indices=["<index>"])` to discover the **real** field names used in this tenant for the rest of the rule's predicates. Different sources nest fields differently (`userIdentity.arn` vs `principal.user.email` vs `actor.id`).
-4. Sample 2–3 actual events to confirm field shapes. Read the schema, not the docs — schema drift is real.
+4. `get_top_columns(indices=["<index>"])` to discover the **real** field names used in this tenant for the rest of the rule's predicates. Different sources nest fields differently (`userIdentity.arn` vs `principal.user.email` vs `actor.id`).
+5. Sample 2–3 actual events to confirm field shapes. Read the schema, not the docs — schema drift is real.
 
-**Index scoping (optional).** By default, a detection rule queries every index the user has read permission for. You typically don't need an `@index=` clause — source-type filtering takes care of it. Add `@index={UUID|"alias"}` (full form required) only when:
+**Index scoping: mandatory for your MCP queries, optional for the rule.** Keep these two separate.
+
+*The MCP queries you run while authoring (Phase 3 sanity check, sampling, Phase 7 backtest)* should
+**always** carry `@index=<name>`. An unscoped query opens every readable index no matter how selective
+the filter is, and `@scnr.source_type` does not help: it narrows matching events, not indexes opened.
+The saving scales with how small your target index is relative to the whole tenant (measured: 37.5 GB
+unscoped versus 2.5 MB scoped for a tiny index in a 1.5 TB/day tenant; near-negligible if your target
+*is* the dominant index). See `../../shared/query_cost_control.md` Step 0.5.
+
+*The rule's shipped `query_text`* usually should **not** pin an index, so it keeps working as data
+moves. Add `@index={UUID|"alias"}` (full form required) to the YAML only when:
 - The customer has separate `prod-*` and `staging-*` indexes of the same source and the rule should fire only on prod.
 - The customer uses the one-source-per-index layout and `@index=` is clearer than `@scnr.source_type=` to their reviewers.
 
@@ -32,11 +50,22 @@ Never invent field paths. If you're unsure whether the field is `eventName` or `
 
 ## Phase 3: Filter-clause sanity check
 
-Write the **first filter clause** of the rule (the part before any `| stats` or `| where`). Run it via Scanner MCP `execute_query` and count.
+Write the **first filter clause** of the rule (the part before any `| stats` or `| where`). Run it via Scanner MCP `execute_query` and count. **Prefix your MCP query with `@index=<name>`** even though the shipped rule will not have it: unscoped queries open every index in the tenant (see Phase 2).
 
-Pick the backtest window using the regime in `backtesting.md`:
-- **Needle-in-haystack** — the filter targets a rare event (specific `eventName`, specific user agent token, specific role-name token). Go long: 30–90 days. Scanner is fast on rare-event queries even at petabyte scale; long backtests are a feature.
-- **Broad** — the filter still hits hundreds of events per day (e.g., "all PutObject in CloudTrail"). Cap at 7 days. Warn the user that going further is expensive.
+Size the window by **measured cost**, not by guessing the regime. Run the filter over a **1-hour**
+probe window first, read `n_bytes_scanned`, and compute:
+
+```
+selectivity = probe_scanned / (bytes_per_day * 1/24)
+projected   = probe_scanned * (target_window / 1h)
+```
+
+Then apply `backtesting.md`:
+- **Needle-in-haystack** (measured selectivity < ~1%): the filter targets a rare event (specific `eventName`, specific user agent token, specific role-name token). Go long: 30–90 days, often more. Scanner is fast on rare-event queries even at petabyte scale; long backtests are a feature. Verified: needle + aggregation over a full day of a 599 GB/day index scanned 274 MB.
+- **Broad** (selectivity > ~50%): the filter hits a high-volume event class ("all PutObject in CloudTrail"). Take the largest window that keeps `projected` under the shared scan budget (a few seconds per query; number in `query_cost_control.md`). **Do not default to 7 days**: at 8 TB/day that is a 7-days-of-ingest scan, orders of magnitude over the budget. Say what you capped it to and recommend a tighter filter, which buys far more than a shorter window does.
+
+Escalate 1h → 24h → target rather than jumping to the target window, so an over-broad filter fails
+cheap instead of timing out.
 
 Read the count **and** `n_bytes_scanned` from the MCP response metadata:
 - **`n_bytes_scanned == 0`** → the target index has no data over the backtest window. Different from "filter matched zero events on data that was there." Stop and tell the user the index appears empty for that range — verify the index name and the data ingestion window. (Verified empirically: empty index = 0, populated index with filter-misses = non-zero, populated index pre-data = 0.)
@@ -44,7 +73,9 @@ Read the count **and** `n_bytes_scanned` from the MCP response metadata:
 - **Reasonable hits** → continue.
 - **Floods** (millions over the window) → the filter is far too broad. Tighten it before drafting the rest of the rule.
 
-Pull a handful of representative events (`| head 5`) — these become the seeds for inline tests in Phase 5.
+Pull a handful of representative events (`| head 5`) — these become the seeds for inline tests in Phase 5. `head` terminates early, so prefer it over an unbounded filter scan; for a broad filter give it a window of minutes, not hours (measured: an unfiltered `| head 3` over 1h of a 600 GB/day index still touched 40 GB).
+
+**In the needle regime, do not scan the long window twice.** The filter-alone check and the Phase 7 backtest cost the same over the same window. Get samples via `| head 5`, then run the full query (filter + aggregation) exactly once over the long window and use it as both sanity check and backtest.
 
 ## Phase 4: Draft the YAML
 
@@ -57,7 +88,7 @@ Apply `yaml_schema.md` mechanically:
 - `severity:` — per `severity_policy.md`.
 - `query_text:` — multi-line `|-` block. Use a source-type filter (`@scnr.source_type=...`, or the bespoke identifier you discovered in Phase 2). Include `@index={UUID|"alias"}` only if Phase 2 identified a scoping reason — aliases alone parse-error in detection rules; resolve UUIDs via `@index=<alias> | head 1 | table(@index, @index_id)`.
 - `time_range_s:` — lookback. Multiple of 60. Default 300.
-- `run_frequency_s:` — how often the engine evaluates. Multiple of 60, `<= time_range_s`. Default 60.
+- `run_frequency_s:` — how often the engine evaluates. Multiple of 60, `<= time_range_s`. Default 60. Choose `time_range_s`/`run_frequency_s` for detection semantics and alert latency **only**: the detection engine is streaming with cached partial results, so rule evaluation cost is negligible and does not scale with cadence the way ad-hoc MCP queries do. Do not lengthen the cadence to "save scan cost"; that saving does not exist and slower cadence delays alerts.
 - `event_sink_keys:` — per `severity_policy.md` (Medium+ → set this; Low/Info → omit).
 - `tags:` — at least one MITRE tactic (`tactics.taXXXX.*`) and one technique (`techniques.tXXXX.*`) where applicable, plus `source.<slug>`. Use only canonical tags from `mitre_tags.md`.
 
@@ -123,12 +154,17 @@ If run-tests fails: read the diff between expected and actual. Often the negativ
 
 ## Phase 7: Historical backtest
 
-Run the **full query** (filter + aggregations + threshold) via Scanner MCP over the regime-appropriate window from Phase 3.
+Run the **full query** (filter + aggregations + threshold) via Scanner MCP over the window Phase 3
+measured as affordable.
 
 Report:
 - Total matches in the window.
-- Expected daily firing rate (matches ÷ days).
-- For aggregated rules: list the top 5 grouping-key values by count.
+- Expected daily firing rate (matches ÷ days). Mark it **extrapolated** if the window was capped by
+  the byte budget rather than chosen freely.
+- Bytes scanned and measured selectivity, so the user can judge the result's weight.
+- For aggregated rules: list the top 5 grouping-key values by count. If the response carries a
+  `MemoryLimit` entry or non-null `results_caveat`, that list is incomplete: say so, and reduce
+  group-by cardinality before raising `max_bytes`.
 
 Tuning decisions:
 - **Medium / High / Critical / Fatal**, expected fire rate > ~10/day → propose extra filters or a threshold (`| where @q.count > N`). Show the user the loud values from the top-5 list so they can decide what to exclude.

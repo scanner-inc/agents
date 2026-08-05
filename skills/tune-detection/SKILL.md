@@ -58,7 +58,7 @@ Follow the full procedure in `references/methodology.md`. The short version:
 
 7. **Validate.** Run `scanner-cli validate -f <path>` and `scanner-cli run-tests -f <path>`. Surface failures verbatim and iterate.
 
-8. **Backtest the tuned query.** Re-run the *full tuned query* (filter + aggregations + threshold) via Scanner MCP over the same window as step 2. Report old vs new fire rate. Optionally also confirm the **TP groups still fire** — if any disappear, the tuning is too aggressive.
+8. **Backtest the tuned query.** Re-run the *full tuned query* (filter + aggregations + threshold) via Scanner MCP. Size the window by measured cost, per `../shared/query_cost_control.md`: step 2 hit the cheap `_detections` index, but this step hits the **source** index, and a rule noisy enough to tune is unselective by definition. Probe 1h, project, and cap to the shared scan budget, the few-seconds target (in a multi-TB/day tenant that is hours, not 14 days; number in `../shared/query_cost_control.md`). Run the *before* query over the same window so the comparison stays apples-to-apples, and label capped rates **extrapolated**. Report old vs new fire rate. Optionally also confirm the **TP groups still fire**; if any disappear, the tuning is too aggressive.
 
 9. **Hand off** via the GitHub-app sync flow — see "Sync flow" below.
 

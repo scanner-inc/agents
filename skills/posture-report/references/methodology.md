@@ -31,7 +31,30 @@ If `truncated` is true, note it in the report.
 
 Use Scanner MCP `execute_query` for two queries:
 
-1. Log volume in the last 24h grouped by source type. Example shape (adjust to current Scanner syntax): `* | groupbycount @scnr.source_type`. Render the top 5 in the report's *Log Volume* fenced code block, right-aligned.
+1. **Log volume in the last 24h, from `_usage`** (not from a raw scan):
+   ```scanner
+   @index=_usage record_type=indexing_record
+   | stats sum(num_bytes_indexed) as bytes_indexed, sum(num_log_events_indexed) as events_indexed
+     by destination_index.name
+   ```
+   Render the top 5 by `bytes_indexed` in the report's *Log Volume* fenced code block,
+   right-aligned, with bytes formatted human-readably (GB / TB).
+
+   **Do not use `* | groupbycount @scnr.source_type` for this.** That query scans the tenant's
+   entire 24h of ingest: measured at ~120 GB for a *single hour* in a mid-size tenant, so ~2.9 TB
+   for 24h, and proportionally more in a multi-TB/day tenant. It will usually *complete*, so the
+   problem is not a timeout: it is that a daily report burns terabytes of scan to produce numbers
+   the `_usage` query gives you for ~650 MB, with more detail (bytes *and* events, which
+   `groupbycount` cannot give you). That is roughly a 4000x cost difference for a strictly better
+   answer. See `../../shared/query_cost_control.md`.
+
+   `_usage` accounts per **destination index**, not per source type. If the user specifically wants
+   a source-type breakdown, add `index_rule.name` to the `by` clause, or fall back to the
+   `source_types` block that `get_scanner_context` already returns (it covers a 1h window, so label
+   it as such) rather than issuing a fresh full-tenant scan.
+
+   Note the bytes/day figures and their tiers (small < 100 GB, large 100 GB–1 TB, extreme > 1 TB) and
+   **reuse them for every later query in the report**: this is the volume probe, so do not repeat it.
 2. Detection alerts in the last 24h grouped by name and severity: `@index=_detections | groupbycount name, severity`. Capture total count, counts per severity, and the top 3 rules by fire count.
 
 Apply the severity-bucket rule from `SKILL.md` when reporting alert activity:

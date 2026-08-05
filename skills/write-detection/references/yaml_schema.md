@@ -22,7 +22,7 @@ Source of truth: <https://scanner.dev/schema/scanner-detection-rule.v1.json>. Th
 | `severity` | yes | One of `Informational`, `Low`, `Medium`, `High`, `Critical`, `Fatal`, `Other`, `Unknown`. See `severity_policy.md` for which one to pick. |
 | `query_text` | yes | `|-` multi-line block. Scanner query syntax. See `query_language.md`. |
 | `time_range_s` | yes | Lookback window in seconds. **Must be minute granularity** (multiple of 60). Default 300. |
-| `run_frequency_s` | yes | Evaluation frequency in seconds. Multiple of 60. Must be `<= time_range_s`. Default 60. |
+| `run_frequency_s` | yes | Evaluation frequency in seconds. Multiple of 60. Must be `<= time_range_s`. Default 60. Pick for alert latency, not cost: the streaming engine makes rule evaluation effectively free at any cadence. |
 | `tags` | recommended | Array of canonical tag strings. At least one MITRE tactic + one technique + `source.<slug>` is the baseline. See `mitre_tags.md`. |
 | `event_sink_keys` | conditional | Required for Medium / High / Critical / Fatal severities (sends alerts to the matching sink). **Omit** for Low / Informational — those become signals consumed by correlation rules. |
 | `dedup_window_s` | optional | Suppress repeat alerts within this window if their dedup-key hash matches. Useful for tuning noise. |

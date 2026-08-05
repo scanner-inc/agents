@@ -21,7 +21,9 @@ If the user ran `/posture-report` recently (within the last hour, visible in the
 If no recent posture-report is available, run the equivalent MCP queries:
 
 ```scanner
-* | groupbycount @scnr.source_type   # log volume by source
+@index=_usage record_type=indexing_record   # log volume by index (cheap: reads usage records)
+| stats sum(num_bytes_indexed) as bytes_indexed, sum(num_log_events_indexed) as events_indexed
+  by destination_index.name
 ```
 
 ```scanner
@@ -30,6 +32,12 @@ If no recent posture-report is available, run the equivalent MCP queries:
 ```
 
 …plus a `get_scanner_context` call to enumerate indices.
+
+Use the `_usage` form above, **not** `* | groupbycount @scnr.source_type`: the latter scans the
+tenant's whole ingest for the window (multi-TB in a large tenant, and a timeout in the worst case)
+to produce less information. See `../../shared/query_cost_control.md`. Keep the resulting bytes/day
+per index in context: it is the volume probe every `/write-detection` and `/tune-detection`
+invocation you recommend downstream will need anyway.
 
 Don't burn time invoking `/posture-report` mechanically every run — if its data is fresh in context, re-use it.
 

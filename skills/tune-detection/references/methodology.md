@@ -192,7 +192,23 @@ If a test fails: the diff between expected vs actual is usually obvious. Inspect
 
 ## Phase 8: Backtest the tuned query
 
-Re-run the *exact* tuned `query_text` (filter + aggregations + threshold) via Scanner MCP over the same window as Phase 2.
+Re-run the *exact* tuned `query_text` (filter + aggregations + threshold) via Scanner MCP.
+
+**Size this window by cost, not by copying Phase 2's.** Phase 2 queried `_detections`, which is
+small and cheap. Phase 8 queries the **source index**, and a rule noisy enough to need tuning is
+unselective by definition, so this is the single most expensive query in the skill. Read
+`../../shared/query_cost_control.md` and apply it:
+
+1. Scope the query with `@index=<name>` (see `../../shared/query_cost_control.md` Step 0.5).
+2. Take the target index's bytes/day from the `_usage` probe.
+3. Run the tuned query over **1 hour**, read `n_bytes_scanned`, project the 14-day cost.
+4. If the projection exceeds the shared scan budget (see `query_cost_control.md`), shrink to the largest affordable window and
+   label the resulting rates **extrapolated**. In an extreme-tier tenant (> 1 TB/day) that may be
+   hours rather than days.
+
+Run the *before* query over the same shortened window too, so the before/after comparison stays
+apples-to-apples. Comparing a 14-day "before" against a 6-hour "after" produces a meaningless
+reduction percentage.
 
 Report:
 - Before fire-rate (`<N>/day` from the classification window).
@@ -203,6 +219,12 @@ Report:
 Example:
 ```
 Backtest: 14 days, was 312/day → now 18/day (-94%). All 3 TP groups still fire.
+```
+
+Capped-window form, when the byte budget forced a shorter run:
+```
+Backtest: capped at 90m by scan budget (index ingests 8.2 TB/day), was 41/h → now 2/h
+(-95%, extrapolated to ~984/day → ~48/day). All 3 TP groups still fire.
 ```
 
 ## Phase 9: Hand off

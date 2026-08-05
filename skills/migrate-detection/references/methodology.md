@@ -84,9 +84,10 @@ If the source rule uses a feature Scanner doesn't have natively (lookups, watchl
 
 For each migrated rule:
 
-1. Run the **first filter clause alone** via Scanner MCP. Apply the backtest regime from `write-detection/references/backtesting.md`:
-   - Needle-in-haystack: 30–90d.
-   - Broad: 1–7d.
+1. Run the **first filter clause alone** via Scanner MCP, always with an `@index=<name>` clause (unscoped queries open every index in the tenant; the migrated rule's YAML stays unscoped). Size the window by measured cost, per `../../shared/query_cost_control.md` and `write-detection/references/backtesting.md`: probe `_usage` for the target index's bytes/day once, run the filter over 1h, read `n_bytes_scanned`, then take the largest window fitting the shared scan budget.
+   - Needle-in-haystack (measured selectivity < ~1%): 30–90d, often more.
+   - Broad (selectivity > ~50%): derive from the byte budget, **not** a fixed 1–7d. In a multi-TB/day tenant, 7 days of a broad aggregation scans tens of TB, orders of magnitude over the budget; the remedy is a tighter filter, not just a shorter window.
+   Migrated rules are especially prone to this: a vendor rule tuned for a 100 GB/day Splunk index can be unselective against a 8 TB/day Scanner index carrying the same source.
 2. **Check `n_bytes_scanned` in the response metadata.** If it's exactly **0**, the target index has zero data over the backtest window (verified empirically: empty index = 0; populated index + filter-misses = non-zero; populated index + pre-data time range = 0). Stop and tell the user: *"`@index=<alias>` returned `n_bytes_scanned: 0` — the index has no data over <window>. The user-specified target index may be wrong, or the data's ingestion window doesn't overlap. Confirm before continuing."*
 3. Read the count and a few sample events.
 4. **If zero hits but `n_bytes_scanned > 0`:**

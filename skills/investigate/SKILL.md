@@ -52,6 +52,16 @@ Run the plan. Tools available at this step:
   - All-fields wildcard search: `**: "<value>"`.
   - Run independent queries in parallel.
   - Stop running queries when the evidence is conclusive. Don't speculate.
+  - **Cost guard before any aggregation over more than a few hours.** Read
+    `../shared/query_cost_control.md`. Probe `_usage` once for the target index's bytes/day, then
+    size the window against the shared scan budget (a few seconds per query; the number lives in that
+    doc) instead of picking a day
+    count. A question phrased as "over the last week" is a ~50 TB scan in a multi-TB/day tenant:
+    orders of magnitude over the budget and far enough out to risk the MCP path's 300s timeout.
+    Answer it with a narrower measured window plus an explicit note, or with a more selective
+    filter.
+  - If a result carries a `MemoryLimit` entry or non-null `results_caveat`, groups were dropped:
+    report the numbers as incomplete rather than exact.
 - **Detection Rules REST API** (`${SCANNER_API_URL}/v1/detection_rule`, `Authorization: Bearer ${SCANNER_API_KEY}`) — for inventory questions like "what rules do we have for X" or "is there a rule covering MITRE technique Y". For "which rules fired recently", use a Scanner MCP query against `@index=_detections` instead — the REST API is inventory-only.
 - **lookup-ioc** skill (or `../lookup-ioc/scripts/lookup_ioc.sh <indicator>`) — for any external IOC that surfaces during the investigation.
 
