@@ -15,18 +15,21 @@ If the user is describing an existing rule with FPs, route to `/tune-detection`.
 
 ## Phase 2: Discover schema and the source-type identifier
 
-1. Call Scanner MCP `get_scanner_context()` first — returns the context token, available indexes, and the `source_types` block listing which `@scnr.source_type` values are populated and at what volume.
+1. Call Scanner MCP `get_scanner_context()` first. It returns the context token and available indexes. Its `source_types` block is only a 1-hour sample (low-volume sources are often missing), so take the source-type inventory from step 2 instead.
 2. **Probe ingest volume once**, per `../../shared/query_cost_control.md`:
    ```scanner
    @index=_usage record_type=indexing_record
-   | stats sum(num_bytes_indexed) as bytes_indexed by destination_index.name
+   | stats sum(num_bytes_indexed) as bytes_indexed, sum(num_log_events_indexed) as events_indexed
+     by destination_index.name, index_rule.source_type
    ```
-   over the last 24h. Note the bytes/day for the index this rule will query and its tier (small
+   over the last 24h. `index_rule.source_type` is the `@scnr.source_type` of the indexed data, so
+   this one cheap query tells you which source types exist, at what volume, and **which index each
+   one lands in** (the index to scope your MCP queries to). Note the bytes/day for the index this rule will query and its tier (small
    < 100 GB, large 100 GB–1 TB, extreme > 1 TB). This number sets every window decision downstream,
    and it is the difference between a 90-day backtest and a timeout. Cache it for the session.
 3. **Pick the source filter** — this is what goes at the top of the rule's query. Decide in this order:
-   - **Natively-supported source** — `get_scanner_context.source_types` shows the source-type for this log family (e.g., `aws:cloudtrail`, `okta`, `auth0:audit`). Use `@scnr.source_type="<value>"`. The rule will work across every index that carries this source-type.
-   - **`custom:generic` source-type** (Scanner doesn't natively support this log family). Source-type filtering is useless — `get_scanner_context` will show `custom:generic` for several different sources at once. Instead, **sample real events** (`@index=<candidate-index> | head 3` via MCP) and find the field that uniquely identifies *this* source within the index. Common candidates: `vendor`, `provider`, `product`, `log_type`, `_source`, or whatever bespoke field the customer added. Use that as the rule's first filter.
+   - **Natively-supported source** — the step 2 probe's `index_rule.source_type` column shows the source-type for this log family (e.g., `aws:cloudtrail`, `okta`, `auth0:audit`). Use `@scnr.source_type="<value>"`. The rule will work across every index that carries this source-type.
+   - **`custom:generic` source-type** (Scanner doesn't natively support this log family). Source-type filtering is useless, because the probe will show `custom:generic` for several different sources at once (its `index_rule.name` values hint at which is which). Instead, **sample real events** (`@index=<candidate-index> | head 3` via MCP) and find the field that uniquely identifies *this* source within the index. Common candidates: `vendor`, `provider`, `product`, `log_type`, `_source`, or whatever bespoke field the customer added. Use that as the rule's first filter.
 4. `get_top_columns(indices=["<index>"])` to discover the **real** field names used in this tenant for the rest of the rule's predicates. Different sources nest fields differently (`userIdentity.arn` vs `principal.user.email` vs `actor.id`).
 5. Sample 2–3 actual events to confirm field shapes. Read the schema, not the docs — schema drift is real.
 

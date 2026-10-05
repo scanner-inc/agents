@@ -35,12 +35,12 @@ The table can lag the product: **Detections → Prebuilt Rules** is the authorit
 
 ## How to recommend a pack
 
-1. Look at the tenant's ingested source-types (from `get_scanner_context.source_types`).
+1. Look at the tenant's ingested source-types: the distinct `index_rule.source_type` values from the `_usage` volume probe run over the **last 7 days** (see `../../shared/query_cost_control.md`, Step 0), so weekly or bursty sources are not missed.
 2. For each ingested source, check the table above for a matching pack.
 3. Skip packs where the user's rule inventory already shows >0 rules with the matching `source.<slug>` tag (suggests the pack is already enabled or the user has private equivalents).
 4. Emit a recommendation per remaining pack with:
    - Pack name + GitHub URL (hardcoded from this table — no local clone needed).
-   - The matching source-type and event volume from `get_scanner_context`.
+   - The matching source-type and its event volume (7d total, or per day) from the `_usage` probe.
    - UI enable instruction: "Detections → Prebuilt Rules → select the `<Source>` tile to sync the pack. Start in `Staging`."
 
 ## Fetching a single OOB rule (without cloning)

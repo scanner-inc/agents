@@ -4,7 +4,7 @@ Read this file when the user invokes `/posture-report` (or asks for the daily Sc
 
 ## Phase 1: Environment discovery
 
-Call Scanner MCP `get_scanner_context` to discover available indices and source types. The tenant id is bound to credentials and does not need to be passed.
+Call Scanner MCP `get_scanner_context` to get the context token and the list of available indices. The tenant id is bound to credentials and does not need to be passed. Do not take the source-type inventory from its `source_types` block (a 1-hour sample that misses low-volume sources); the Phase 3 `_usage` query gives the authoritative 24h list.
 
 ## Phase 2: Rule inventory
 
@@ -35,23 +35,24 @@ Use Scanner MCP `execute_query` for two queries:
    ```scanner
    @index=_usage record_type=indexing_record
    | stats sum(num_bytes_indexed) as bytes_indexed, sum(num_log_events_indexed) as events_indexed
-     by destination_index.name
+     by destination_index.name, index_rule.source_type
    ```
-   Render the top 5 by `bytes_indexed` in the report's *Log Volume* fenced code block,
-   right-aligned, with bytes formatted human-readably (GB / TB).
+   Render the top 5 rows by `bytes_indexed` in the report's *Log Volume* fenced code block,
+   right-aligned, with bytes formatted human-readably (GB / TB). Keep the full result: summed by
+   `index_rule.source_type`, it is the per-source-type event volume that Phase 4's log-source gap
+   analysis needs, so no further volume query is required.
 
    **Do not use `* | groupbycount @scnr.source_type` for this.** That query scans the tenant's
    entire 24h of ingest: measured at ~120 GB for a *single hour* in a mid-size tenant, so ~2.9 TB
    for 24h, and proportionally more in a multi-TB/day tenant. It will usually *complete*, so the
    problem is not a timeout: it is that a daily report burns terabytes of scan to produce numbers
-   the `_usage` query gives you for ~650 MB, with more detail (bytes *and* events, which
-   `groupbycount` cannot give you). That is roughly a 4000x cost difference for a strictly better
-   answer. See `../../shared/query_cost_control.md`.
+   the `_usage` query gives you for ~1 GB, with more detail (bytes *and* events per index *and*
+   source type, which `groupbycount` cannot give you). That is a several-thousand-fold cost
+   difference for a strictly better answer. See `../../shared/query_cost_control.md`.
 
-   `_usage` accounts per **destination index**, not per source type. If the user specifically wants
-   a source-type breakdown, add `index_rule.name` to the `by` clause, or fall back to the
-   `source_types` block that `get_scanner_context` already returns (it covers a 1h window, so label
-   it as such) rather than issuing a fresh full-tenant scan.
+   `index_rule.source_type` is the `@scnr.source_type` of the indexed data. It has only been
+   populated since 2026-09-25, which is fine for this 24h window. Several distinct sources can
+   share `custom:generic`; split those with `index_rule.name` if the report needs it.
 
    Note the bytes/day figures and their tiers (small < 100 GB, large 100 GB–1 TB, extreme > 1 TB) and
    **reuse them for every later query in the report**: this is the volume probe, so do not repeat it.

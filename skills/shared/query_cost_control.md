@@ -74,7 +74,7 @@ Run this before the first wide query. It tells you which cost regime the tenant 
 ```scanner
 @index=_usage record_type=indexing_record
 | stats sum(num_bytes_indexed) as bytes_indexed, sum(num_log_events_indexed) as events_indexed
-  by destination_index.name
+  by destination_index.name, index_rule.source_type
 ```
 
 Window: the last 24h (use 7d divided by 7 if yesterday looks atypical).
@@ -82,10 +82,39 @@ Window: the last 24h (use 7d divided by 7 if yesterday looks atypical).
 Field names above are verified against `_usage`. Notes:
 
 - `record_type` is one of `indexing_record` (what you want), `collect_record`, `query_record`.
-- `_usage` accounts per **destination index**, not per source type. If one index carries several
-  sources, add `index_rule.name` to the `by` clause to split it further.
-- The probe is cheap: ~656 MB scanned for 24h of `_usage` in a 40-index tenant.
+- `index_rule.source_type` is the `@scnr.source_type` of the data that index rule wrote (e.g.
+  `aws:cloudtrail`, `1password:audit`, `custom:generic`). It is the **source-type inventory** for
+  the tenant: which source types exist, their volume, and which index each one lands in. Do not
+  read `@scnr.source_type` on `_usage` itself; that is always `scnr:usage`.
+- `index_rule.source_type` is only populated on indexing records written since **2026-09-25**.
+  Older records lack it, so a window reaching further back undercounts per source type (the
+  per-index totals are still complete). For the 24h probe this does not matter.
+- If one index carries several `custom:generic` sources, add `index_rule.name` to the `by` clause
+  to split it further.
+- The probe is cheap: ~1.1 GB scanned for 24h of `_usage` in a 40-index tenant (45 rows), and
+  ~7.6 GB for 7d.
 - Cache the result for the session. Do not re-run it per query.
+
+**`_usage` cost scales with the number of ingested files, not bytes.** There is one indexing
+record (~1.6 KB to scan) per ingested file, so a tenant's `_usage` volume depends on how its data
+is chunked. Measured in a ~3.3 TB/day tenant: ~674k records/day, averaging ~5 MB indexed per file
+overall and ~1.3 MB per file for CloudTrail (many small objects). Projected for a 10 TB/day tenant:
+
+| Data shape | Records/day | `_usage` 24h | `_usage` 7d | Raw `* \| groupbycount` 7d |
+| --- | --- | --- | --- | --- |
+| Typical (~5 MB/file) | ~2M | ~3 GB | ~23 GB | ~70 TB |
+| Small files, CloudTrail-like (~1.3 MB/file) | ~8M | ~13 GB | ~90 GB | ~70 TB |
+
+So a 7d `_usage` query fits the budget even in a 10 TB/day tenant; use 7d whenever you need a
+complete source-type inventory (sources that ship weekly or in bursts can be silent for a day).
+The one shape to watch is very high volume in very small files (e.g. ~14 KB per file, like ALB
+health-check logs): if the 24h probe itself scans tens of GB, size longer `_usage` windows from it
+like any other query.
+
+**This probe replaces every "which source types exist?" scan.** Never discover source types with
+`* | groupbycount @scnr.source_type` (or `%ingest.source_type`): that reads every event the tenant
+ingested in the window, measured at ~249 GB for a *single hour* in the same tenant where the
+`_usage` probe reads ~1.1 GB for a full day.
 
 Read the row for the index your query will actually touch, and classify:
 
@@ -131,8 +160,9 @@ Consequences:
 
 - When no `@index=` is present, the volume number that matters is the **sum** of all rows from the
   Step 0 probe, not the biggest one.
-- If you do not know which index holds the source, find out (`get_scanner_context`, or a single
-  scoped `| head 3` probe per candidate) rather than running an unscoped wide query.
+- If you do not know which index holds the source, find out (the Step 0 probe's
+  `index_rule.source_type` column, or a single scoped `| head 3` probe per candidate) rather than
+  running an unscoped wide query.
 - **A detection rule's shipped `query_text` is a separate question.** Rules usually should *not* pin
   an index, so they keep working as data moves. That portability argument applies to the YAML, never
   to the ad-hoc MCP queries you run while authoring it. Scope your queries; leave the rule portable.
@@ -222,9 +252,11 @@ Practical habits, including two facts verified in the MCP server source:
 
 - **`get_scanner_context` is itself an expensive call**: it runs an unscoped 1-hour
   `* | groupbycount` across every readable index to build its `source_types` block, roughly the
-  tenant's hourly ingest in scan cost (~120 GB measured on a 1.5 TB/day tenant). Call it once per
-  session and never re-call it to "refresh". Its `source_types` block is a 1-hour volume signal
-  you already paid for; reuse it before running any volume query of your own.
+  tenant's hourly ingest in scan cost (~120 to 250 GB measured on a 1.5 TB/day tenant). Call it
+  once per session and never re-call it to "refresh". Treat its `source_types` block as a rough
+  hint only: it covers 1 hour, so low-volume sources (audit logs, identity providers) are often
+  missing from it. For the authoritative source-type list and volumes, use the Step 0 `_usage`
+  probe.
 - **`get_top_columns` is metadata-backed and does not scan log data.** Use it freely to discover
   fields; prefer it over sampling events when the question is "what fields exist".
 - Reuse the Step 0 probe rather than re-running it.

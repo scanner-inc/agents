@@ -21,9 +21,9 @@ If the user ran `/posture-report` recently (within the last hour, visible in the
 If no recent posture-report is available, run the equivalent MCP queries:
 
 ```scanner
-@index=_usage record_type=indexing_record   # log volume by index (cheap: reads usage records)
+@index=_usage record_type=indexing_record   # log volume by index + source type (cheap: reads usage records)
 | stats sum(num_bytes_indexed) as bytes_indexed, sum(num_log_events_indexed) as events_indexed
-  by destination_index.name
+  by destination_index.name, index_rule.source_type
 ```
 
 ```scanner
@@ -37,7 +37,17 @@ Use the `_usage` form above, **not** `* | groupbycount @scnr.source_type`: the l
 tenant's whole ingest for the window (multi-TB in a large tenant, and a timeout in the worst case)
 to produce less information. See `../../shared/query_cost_control.md`. Keep the resulting bytes/day
 per index in context: it is the volume probe every `/write-detection` and `/tune-detection`
-invocation you recommend downstream will need anyway.
+invocation you recommend downstream will need anyway. Its `index_rule.source_type` column is also
+the tenant's **source-type inventory** for Phase 6 (OOB packs); use it instead of
+`get_scanner_context.source_types`, which is a 1-hour sample that misses low-volume sources.
+
+**Run the `_usage` query over the last 7 days, not 24h.** A recommendation run needs a complete
+inventory, and sources that only ship weekly or in bursts (scheduled exports, rare audit logs) can
+be silent for a whole day. Divide the 7d sums by 7 for the bytes/day probe figure. 7d of `_usage`
+is still cheap (cost tracks the number of ingested files, not bytes; see
+`../../shared/query_cost_control.md`). The alert-activity query stays at 24h. If you reused a
+posture-report under A, its 24h volume table is not a complete inventory: still run this 7d
+`_usage` query for Phase 6.
 
 Don't burn time invoking `/posture-report` mechanically every run — if its data is fresh in context, re-use it.
 
@@ -193,7 +203,7 @@ Filter the candidate pairs: prefer rules of different MITRE tactics (defense-eva
 
 **No local clone required.** Use the hardcoded pack list in `references/oob_packs.md` — it's a small, stable list of `scanner-inc/detection-rules-*` repos (each pack is its own GitHub repo).
 
-For each ingested source-type in the tenant (from `get_scanner_context.source_types`):
+For each ingested source-type in the tenant (the distinct `index_rule.source_type` values from the Phase 1 7-day `_usage` query):
 
 1. Look up the matching pack in `oob_packs.md` by source-slug.
 2. Check whether the user already has rules tagged `source.<slug>` (from the Phase 2 inventory). If yes — the pack is probably already enabled OR the user has private equivalents; skip.

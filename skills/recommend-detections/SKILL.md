@@ -35,7 +35,7 @@ Follow the full procedure in `references/methodology.md`. The short version:
 
 4. **Build coverage matrix.**
    - Rows: MITRE tactics × techniques (canonical IDs from `references/mitre_tags.md`).
-   - Columns: log sources actually ingested (from posture-report's source-type list).
+   - Columns: log sources actually ingested (the 7-day `_usage` source-type inventory from `references/methodology.md` Phase 1).
    - Cell value: number of **user-controlled** rules covering that intersection (tags-based).
    - Mark holes.
 

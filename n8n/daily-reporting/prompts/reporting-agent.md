@@ -27,7 +27,7 @@ You are a Scanner detection engineering assistant. Once a day, you produce a con
 
 ## Phase 3: Recent Activity
 
-5. Use Scanner MCP to query log volume over the last 24 hours, grouped by source type. Example query shape (adjust to current Scanner query syntax): `* | groupbycount @scnr.source_type`.
+5. Use Scanner MCP to query log volume over the last 24 hours, grouped by source type, from the `_usage` index (it reads small usage records, ~1 GB, instead of every ingested event): `@index=_usage record_type=indexing_record | stats sum(num_log_events_indexed) as events, sum(num_bytes_indexed) as bytes by index_rule.source_type`. Never use `* | groupbycount @scnr.source_type` for this: it scans the tenant's entire 24h of ingest (hundreds of GB to multiple TB). Take the source types present from this query too, not from the `get_scanner_context` source types block, which only samples 1 hour.
 6. Use Scanner MCP to query detection alerts over the last 24 hours: `@index=_detections | groupbycount name, severity`. Include: total count, counts by severity, top 5 rules by fire count.
 7. Identify patterns: rules firing unusually often (possible noise or active incident), rules not firing that historically do (possible ingestion gap).
 

@@ -53,12 +53,12 @@ Indices: <comma-separated list from get_scanner_context>
 
 ## Log Volume (24h)
 ```
-index                 bytes      events
-beyondtrust-use1     599 GB  662,379,054
-global-cloudtrail    411 GB  156,382,271
-notion-usw2           85 GB   59,421,882
+index              source_type        bytes      events
+app-logs           custom:generic    599 GB  662,379,054
+global-cloudtrail  aws:cloudtrail    411 GB  156,382,271
+vpc-flow           aws:vpc_flow       85 GB   59,421,882
 ```
-(One row per index with non-zero volume, ordered by bytes descending, max 5 rows. Right-align both numeric columns with spaces. Source: the `_usage` query in `references/methodology.md` — never a full-tenant `* | groupbycount` scan, which costs the tenant's whole daily ingest to produce less. Flag any index over 1 TB/day inline, since that changes what later queries can afford.)
+(One row per index and source type with non-zero volume, ordered by bytes descending, max 5 rows. Right-align both numeric columns with spaces. Source: the `_usage` query in `references/methodology.md` — never a full-tenant `* | groupbycount` scan, which costs the tenant's whole daily ingest to produce less. Flag any index over 1 TB/day inline, since that changes what later queries can afford.)
 
 ## Alert Activity (24h)
 Actionable: <N> alerts (Fatal <N> · Critical <N> · High <N> · Medium <N>)
