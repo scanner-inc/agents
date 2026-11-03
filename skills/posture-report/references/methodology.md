@@ -14,14 +14,16 @@ Run `scripts/list_detection_rules.sh` (max 5 pages by default → up to 5,000 ru
 { "rules": [ {...}, {...} ], "truncated": <bool>, "pages": <N> }
 ```
 
-For each rule, the relevant fields are: `name`, `severity`, `tags` (MITRE tactics/techniques like `tactics.ta0005.defense_evasion`, `techniques.t1529.system_shutdown_reboot`), `query_text`, `enabled_state_override`, `last_alerted_at`.
+For each rule, the relevant fields are: `name`, `severity`, `tags` (MITRE tactics/techniques like `tactics.ta0005.defense_evasion`, `techniques.t1529.system_shutdown_reboot`), `query_text`, `enabled_state_override`, `enabled_state_synced`, `last_alerted_at`.
 
-Aggregate over the rules:
+**Effective rule state.** A rule's state is `enabled_state_override` when it is set, otherwise `enabled_state_synced` (values `Active`, `Staging`, `Paused`). Rules synced from a detection-rules repo usually have no override, so reading the override alone mis-files them. Do **not** use the `enabled` field: the API returns it as `true` for every rule regardless of state, so it cannot tell active from paused.
 
-- Total active rules, staging rules, paused rules (from `enabled_state_override`).
-- MITRE tactics covered — derive from `tactics.ta*` tags.
-- MITRE techniques covered — derive from `techniques.t*` tags.
-- Log sources covered — infer from `@index=` clauses and `@scnr.source_type:` predicates inside `query_text`.
+Aggregate over the rules, using the effective state:
+
+- Total active rules, staging rules, paused rules.
+- MITRE tactics covered — derive from `tactics.ta*` tags, on **active** rules only (a paused or staging rule does not provide coverage).
+- MITRE techniques covered — derive from `techniques.t*` tags, on active rules only.
+- Log sources covered — infer from `@index=` clauses and `@scnr.source_type:` predicates inside `query_text`, on active rules only.
 - Rules that have never fired — `last_alerted_at` is null.
 - Rules last fired >90 days ago — candidates for the *zombie* bucket.
 
