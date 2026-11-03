@@ -14,14 +14,17 @@ Run `scripts/list_detection_rules.sh` (max 5 pages by default → up to 5,000 ru
 { "rules": [ {...}, {...} ], "truncated": <bool>, "pages": <N> }
 ```
 
-For each rule, the relevant fields are: `name`, `severity`, `tags` (MITRE tactics/techniques like `tactics.ta0005.defense_evasion`, `techniques.t1529.system_shutdown_reboot`), `query_text`, `enabled_state_override`, `last_alerted_at`.
+For each rule, the relevant fields are: `name`, `severity`, `tags` (MITRE tactics/techniques like `tactics.ta0005.defense_evasion`, `techniques.t1529.system_shutdown_reboot`), `query_text`, `enabled_state_override`, `enabled_state_synced`, `last_alerted_at`.
 
-Aggregate over the rules:
+**Effective rule state.** A rule's state is `enabled_state_override` when it is set, otherwise `enabled_state_synced` (values `Active`, `Staging`, `Paused`). Rules synced from a detection-rules repo usually have no override, so reading the override alone mis-files them. Do **not** use the `enabled` field: the API returns it as `true` for every rule regardless of state, so it cannot tell active from paused.
 
-- Total active rules, staging rules, paused rules (from `enabled_state_override`).
-- MITRE tactics covered — derive from `tactics.ta*` tags.
-- MITRE techniques covered — derive from `techniques.t*` tags.
-- Log sources covered — infer from `@index=` clauses and `@scnr.source_type:` predicates inside `query_text`.
+Aggregate over the rules, using the effective state:
+
+- Total active rules, staging rules, paused rules.
+- MITRE tactics covered — derive from `tactics.ta*` tags, on **active** rules only (a paused or staging rule does not provide coverage). Also tally paused and staging rules per tactic, so Phase 4 can say "zero active, 2 paused" and point at an existing rule to review instead of recommending a duplicate.
+- MITRE techniques covered — derive from `techniques.t*` tags, on active rules only (tally non-active rules the same way).
+- Log sources covered — infer from `@index=` clauses and `@scnr.source_type:` predicates inside `query_text`, on active rules only (tally non-active rules per source the same way). A correlation rule's query may name only `_detections` rather than its sources, so attribute its sources through its constituent rules: a constituent that is **running** (`Active`, or `Staging`, which still writes to `_detections`) counts toward the active correlation's coverage, but a standalone `Staging` rule does not count as covered. A running constituent is not enough on its own: before crediting a correlation, check that it is eligible to use that input (it may filter out staged inputs, for example `staging=false`) and that enough distinct inputs are running to satisfy its query (it may require more than are running). Apply the same test before counting a correlation's tactic and technique tags in the two bullets above, and do not count tags that are supported only by paused constituents. If a correlation's constituents or conditions cannot be resolved, report that coverage as **unknown**, not as a confirmed gap or as covered.
+- Keep three kinds of contribution distinct in every coverage count: **confirmed** coverage (the rule or correlation is active and demonstrably satisfiable), **blocked** active rules (an active correlation that cannot be satisfied, for example because its inputs are filtered out or not running), and **unknown** contributions (constituents or conditions that cannot be resolved). Totals such as the Environment line's tactic count use confirmed coverage only and say how many tactics are unresolved; never fold blocked or unknown contributions into either "covered" or "zero".
 - Rules that have never fired — `last_alerted_at` is null.
 - Rules last fired >90 days ago — candidates for the *zombie* bucket.
 
@@ -78,9 +81,9 @@ Use `references/mitre_tactics.md` as the canonical source for MITRE tag IDs and 
 
 Compute these gap categories:
 
-- **Log-source gaps (already ingesting, not covered)**: source types currently producing meaningful volume (>100 events / 24h) but with zero or very few rules targeting them. Each becomes its own bullet in *Coverage Gaps*, with the volume and the missing rule category folded into the bullet — e.g. `aws:ecs — 212M events/day, zero ECS container-runtime rules`.
+- **Log-source gaps (already ingesting, not covered)**: source types currently producing meaningful volume (>100 events / 24h) but with zero or very few **active** rules targeting them (name any paused or staging rules for that source in the bullet; resolve unclear correlation dependencies as *unknown*, per Phase 2). Each becomes its own bullet in *Coverage Gaps*, with the volume and the missing rule category folded into the bullet — e.g. `aws:ecs — 212M events/day, zero ECS container-runtime rules`.
 - **Log-source gaps (not yet ingesting, recommended)**: 1–3 high-value candidates from the supported-sources list that the customer is not ingesting. Surface these as recommendations, not gaps.
-- **MITRE tactic gaps**: tactics from the canonical list with zero or near-zero coverage. Cite by tag and group: `Zero rules: \`tactics.ta0043.reconnaissance\`, \`tactics.ta0011.command_and_control\`. Single rule only: \`tactics.ta0008.lateral_movement\`.`
+- **MITRE tactic gaps**: tactics from the canonical list with zero or near-zero **confirmed** active coverage (report blocked or unresolved contributors alongside confirmed coverage whenever they exist, for example "1 confirmed, 1 blocked correlation", and report a tactic whose only active contributors are blocked or unresolved correlations as blocked or unknown, per Phase 2, not as zero). Cite by tag and group: `Zero confirmed active coverage: \`tactics.ta0043.reconnaissance\`, \`tactics.ta0011.command_and_control\`. Single confirmed contributor: \`tactics.ta0008.lateral_movement\`.` If paused or staging rules carry the tag, say so (e.g. `zero active, 2 paused`) so the recommendation is to review or promote them rather than write a duplicate.
 - **MITRE technique gaps**: techniques relevant to the customer's ingested log sources that no rule covers. Surface these as recommendations, not gaps.
 - **Zombie rules**: never fired, or last fired >90 days ago. One bullet in *Coverage Gaps* with a count plus a one-line characterization — e.g. `55 zombie rules, heavily CloudTrail-focused, worth a tuning review`.
 
