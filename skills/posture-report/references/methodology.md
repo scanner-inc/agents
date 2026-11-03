@@ -21,9 +21,9 @@ For each rule, the relevant fields are: `name`, `severity`, `tags` (MITRE tactic
 Aggregate over the rules, using the effective state:
 
 - Total active rules, staging rules, paused rules.
-- MITRE tactics covered — derive from `tactics.ta*` tags, on **active** rules only (a paused or staging rule does not provide coverage).
-- MITRE techniques covered — derive from `techniques.t*` tags, on active rules only.
-- Log sources covered — infer from `@index=` clauses and `@scnr.source_type:` predicates inside `query_text`, on active rules only.
+- MITRE tactics covered — derive from `tactics.ta*` tags, on **active** rules only (a paused or staging rule does not provide coverage). Also tally paused and staging rules per tactic, so Phase 4 can say "zero active, 2 paused" and point at an existing rule to review instead of recommending a duplicate.
+- MITRE techniques covered — derive from `techniques.t*` tags, on active rules only (tally non-active rules the same way).
+- Log sources covered — infer from `@index=` clauses and `@scnr.source_type:` predicates inside `query_text`, on active rules only (tally non-active rules per source the same way). A correlation rule's query may name only `_detections` rather than its sources, so attribute its sources through its constituent rules: a constituent that is **running** (`Active`, or `Staging`, which still writes to `_detections`) counts toward the active correlation's coverage, but a standalone `Staging` rule does not count as covered. If a correlation's constituents cannot be resolved, report that source's coverage as **unknown**, not as a confirmed gap.
 - Rules that have never fired — `last_alerted_at` is null.
 - Rules last fired >90 days ago — candidates for the *zombie* bucket.
 
@@ -80,9 +80,9 @@ Use `references/mitre_tactics.md` as the canonical source for MITRE tag IDs and 
 
 Compute these gap categories:
 
-- **Log-source gaps (already ingesting, not covered)**: source types currently producing meaningful volume (>100 events / 24h) but with zero or very few rules targeting them. Each becomes its own bullet in *Coverage Gaps*, with the volume and the missing rule category folded into the bullet — e.g. `aws:ecs — 212M events/day, zero ECS container-runtime rules`.
+- **Log-source gaps (already ingesting, not covered)**: source types currently producing meaningful volume (>100 events / 24h) but with zero or very few **active** rules targeting them (name any paused or staging rules for that source in the bullet; resolve unclear correlation dependencies as *unknown*, per Phase 2). Each becomes its own bullet in *Coverage Gaps*, with the volume and the missing rule category folded into the bullet — e.g. `aws:ecs — 212M events/day, zero ECS container-runtime rules`.
 - **Log-source gaps (not yet ingesting, recommended)**: 1–3 high-value candidates from the supported-sources list that the customer is not ingesting. Surface these as recommendations, not gaps.
-- **MITRE tactic gaps**: tactics from the canonical list with zero or near-zero coverage. Cite by tag and group: `Zero rules: \`tactics.ta0043.reconnaissance\`, \`tactics.ta0011.command_and_control\`. Single rule only: \`tactics.ta0008.lateral_movement\`.`
+- **MITRE tactic gaps**: tactics from the canonical list with zero or near-zero **active** coverage. Cite by tag and group: `Zero active rules: \`tactics.ta0043.reconnaissance\`, \`tactics.ta0011.command_and_control\`. Single active rule only: \`tactics.ta0008.lateral_movement\`.` If paused or staging rules carry the tag, say so (e.g. `zero active, 2 paused`) so the recommendation is to review or promote them rather than write a duplicate.
 - **MITRE technique gaps**: techniques relevant to the customer's ingested log sources that no rule covers. Surface these as recommendations, not gaps.
 - **Zombie rules**: never fired, or last fired >90 days ago. One bullet in *Coverage Gaps* with a count plus a one-line characterization — e.g. `55 zombie rules, heavily CloudTrail-focused, worth a tuning review`.
 
